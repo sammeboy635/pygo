@@ -1,100 +1,79 @@
+use regex::Regex;
 
-use std::string::String;
-use TokenType::*;
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub enum TokenType {
-    Go,
-    Async,
-    For,
-    Equal,
-    Or,
-    And,
-    Not,
-    Function,
-    Var,
-    In,
-    Plus,
-    Minus,
-    Multiply,
-    Divide,
-    Integer,
-    Float,
-    String,
-    Identifier,
-    Unknown,
+pub fn lex2(input: &str, operators: &Vec<&str>) -> Vec<String> {
+    let mut tokens: Vec<String> = Vec::new();
+
+    // Construct regular expression from list of operators
+    let mut op_regex = String::new();
+    for op in operators {
+        op_regex.push_str(&format!("{}|", regex::escape(op)));
+    }
+    op_regex.pop(); // Remove trailing "|"
+
+    // Update the format! string to include the op_regex correctly
+    let re_str = format!(
+        "([a-zA-Z0-9_]+)|([=,])|({})|(\"[^\"]*\")",
+        op_regex
+    );
+    let re = Regex::new(&re_str).unwrap();
+
+    // Iterator for finding matches
+    let mut it = re.find_iter(input);
+
+    while let Some(matched) = it.next() {
+        // Add matched token to list of tokens
+        let token = matched.as_str().to_string();
+        tokens.push(token);
+    }
+
+    tokens
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub struct Token {
-    pub token_type: TokenType,
-    pub value: String,
-    pub start_pos: usize,
-    pub end_pos: usize,
-}
+pub fn lex(input: &str, operators: &Vec<&str>) -> Vec<String> {
+    let mut tokens: Vec<String> = Vec::new();
+    let mut current_token = String::new();
+    let input_chars: Vec<char> = input.chars().collect();
 
-
-
-pub struct Lexer {
-    input: std::string::String,
-}
-
-impl Lexer {
-    pub fn new(input: &str) -> Self {
-        Lexer {
-            input: input.to_string(),
+    for &ch in input_chars.iter() {
+        if ch.is_whitespace() {
+            if !current_token.is_empty() {
+                tokens.push(current_token.clone());
+                current_token.clear();
+            }
+        } else if operators.contains(&ch.to_string().as_str()) {
+            if !current_token.is_empty() {
+                tokens.push(current_token.clone());
+                current_token.clear();
+            }
+            tokens.push(ch.to_string());
+        } else {
+            current_token.push(ch);
         }
     }
 
-    pub fn lex(&self) -> Vec<Token> {
-        let mut tokens = vec![];
-        let words: Vec<&str> = self.input.split_whitespace().collect();
-        let mut current_pos = 0;
-
-        for word in words {
-            let start_pos = self.input[current_pos..].find(word).unwrap() + current_pos;
-            let end_pos = start_pos + word.len() - 1;
-
-            let token_type = match word {
-                "go" => Go,
-                "async" => Async,
-                "for" => For,
-                "=" => Equal,
-                "||" | "or" => Or,
-                "&&" | "and" => And,
-                "!" | "not" => Not,
-                "def" => Function,
-                "var" => Var,
-                "in" => In,
-                "+" => Plus,
-                "-" => Minus,
-                "*" => Multiply,
-                "/" => Divide,
-                _ if word.parse::<i32>().is_ok() => Integer,
-                _ if word.parse::<f64>().is_ok() => Float,
-                _ if word.starts_with("\"") && word.ends_with("\"") => String,
-                _ => Identifier,
-            };
-
-            tokens.push(Token {
-                token_type,
-                value: word.to_string(),
-                start_pos,
-                end_pos,
-            });
-
-            current_pos = end_pos + 1;
-        }
-
-        tokens
+    if !current_token.is_empty() {
+        tokens.push(current_token);
     }
+
+    tokens
 }
 
-pub fn test_lexer() -> Vec<Token>{
-	let input = "go async for = || && ! func var in + - * / 42 3.14 \"string\" identifier";
-    let lexer = Lexer::new(input);
-    let tokens = lexer.lex();
-    for token in &tokens {
-        println!("{:?}", token);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_lex() {
+        let operators = vec!["+", "-", "*", "/", "%", ":", "(", ")"];
+        let input = "test2 = 3 + (9 * (5 + 8)) * 3 / 5".to_string();
+
+        let tokens = lex(&input, &operators);
+
+        let expected_tokens = vec![
+            "test2", "=", "3", "+", "(", "9", "*", "(", "5", "+", "8", ")", ")", "*", "3", "/", "5",
+        ];
+
+        assert_eq!(tokens, expected_tokens);
     }
-	return tokens;
 }

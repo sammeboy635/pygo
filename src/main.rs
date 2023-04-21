@@ -1,45 +1,49 @@
-
+#![allow(warnings)]
+#![allow(unused_imports)]
 
 mod lexer;
 mod parser;
-mod ast;
-mod codegen;
+
 mod interpreter;
+mod timer;
 
-#[allow(unused_imports)]
-use lexer::{Lexer, Token, TokenType,  test_lexer};
-use parser::{Parser};
-use codegen::{Type, generate_code};
-use interpreter::{interpret};
+use crate::lexer::lex;
+use crate::parser::{Parser, parse_expression};
+use crate::interpreter::interpret;
+use crate::timer::Timer;
+
+use std::time::{Instant};
 use std::collections::HashMap;
-
-
+use evalexpr::*;
+//Lexing: 874 us
+//Parsing: 1279 us
 fn main() {
-	//test_lexer();
-	//let token = Lexer::new("x + 1 + 2 * 3 + 2").lex();
-	let token = Lexer::new("5 + 10").lex();
-	println!("{:?}", token);
-	//test_parser(token);
-	let mut parser = Parser::new(token.clone());
-	let ast = parser.parse().unwrap();
-	println!("{:?}", ast);
-	let variables = vec![
-        ("x".to_string(), Type::Integer),
-        ("y".to_string(), Type::Float),
-    ]
-    .into_iter()
-    .collect();
+	let operaters = vec!["+", "-", "*", "/", "%",":","(",")"];
+	let input = "test2 = 3 + (9 * (5 + 8)) * 3 / 5".to_string();
 
-	let instructions =  generate_code(&ast, &variables);
-	println!("{:?}", instructions);
+	let mut timer = Timer::new();
+	let tokens = lex(&input, &operaters);
+	timer.end("Lexing");
+	println!("{:?}", tokens);
 
-    let variabless: HashMap<String, f64> = vec![
-        ("x".to_string(), 10.0),
-        ("y".to_string(), 5.0),
-    ]
-    .into_iter()
-    .collect();
+	let mut vari: HashMap<String, interpreter::Type> = HashMap::new();
+	let mut parser = Parser::new(tokens);
+	let mut instructions = vec![];
+	parse_expression(&mut parser, &mut instructions);
+	timer.end("Parsing");
 
-    let result = interpret(&instructions, &variabless);
-    println!("Result: {}", result);
+	println!("interpreting: {:?}", interpret(&instructions, &mut vari));
+	timer.end("Interpreting");
+	
+
+	timer.start();
+	let expression = "3 + (9 * (5 + 8)) * 3 / 5";
+    match eval(expression) {
+        Ok(result) => println!("The result of the expression is: {}", result),
+        Err(error) => println!("Error: {}", error),
+    }
+	timer.end("Evaluating");
+
+	println!("{:?}", vari);
 }
+
