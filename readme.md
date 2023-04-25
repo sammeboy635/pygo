@@ -1,4 +1,4 @@
-### Lexer
+# Lexer
 The lexer in this interpreter is responsible for breaking down the input string into tokens that can be processed by the parser. The lex function in main.rs performs this task.
 
 The lexer works by iterating through the characters in the input string. For each character, it checks if it is a whitespace character or an operator. If it is a whitespace character, the current token is pushed onto the token vector and a new token is started. If it is an operator, the current token is pushed onto the token vector and the operator is added as a new token. Otherwise, the character is added to the current token.
@@ -9,7 +9,7 @@ The lexer returns a vector of strings, where each string represents a token iden
 
 If you want to modify or extend the lexer, you can modify the lex function in main.rs. You can add new operators to the operaters vector, or modify the logic for identifying tokens. However, be careful to ensure that the modifications do not break the lexer's ability to correctly tokenize input strings.
 
-### Parser
+# Parser
 The parser takes in a list of tokens from the lexer and produces a set of instructions that can be executed by the interpreter. The parser is implemented as a struct called Parser.
 
 Fields
@@ -22,13 +22,12 @@ parenthesis_count: a counter that keeps track of the current number of open pare
 sl: a hashmap of standard library functions.
 custom: a hashmap of custom functions defined by the user.
 
-### Interpreter
+# Interpreter
 It supports basic arithmetic operations such as addition, subtraction, multiplication, division, exponentiation, and modulo. The interpreter can also handle user-defined functions and variables, and supports custom function calls. It is implemented in Rust and uses a stack-based approach for evaluating expressions. The interpreter is designed to be extensible, allowing new functions and operations to be easily added.
 
 
 
-
-### Notes
+# Notes
 # Write Test Cases
 Multiple variable declarations on one line, separated by commas: a = 1, b = 2, c = 3
 Variable declarations with different types on one line: a = 1, b = "hello", c = 3.14
@@ -38,33 +37,31 @@ Variables with names that are keywords in your language: if = 1
 Variables with names that clash with built-in functions or other identifiers: print = 1
 Variables with names that start with an underscore or contain special characters: _a = 1, a! = 1
 
-# Optional type annotation
+### Optional type annotation
 a: int = 1
 
-# No type annotation
+### No type annotation
 b = "hello"
 
-# Type checking for integer
+### Type checking for integer
 g: int = 1
 h: int = "hello"  # Raises a type error
 
-# Type checking for custom types
+### Type checking for custom types
 class CustomType:
     def __init__(self, value: int):
         self.value = value
         
 i: CustomType = CustomType("hello")  # Raises a type error
 
-# Type coercion
+### Type coercion
 k: int = 1
 l: float = k  # Coerces the integer 1 to a float
 m: str = k  # Raises a type error
 
-# Type annotation specific to external library
+### Type annotation specific to external library
 import numpy as np
 n: np.ndarray = np.array([1, 2, 3])
 
-# Syntax for declaring types:
+### Syntax for declaring types:
 q = p as str
-
- parse_expression(parser, instructions);
