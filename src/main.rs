@@ -28,7 +28,7 @@ use std::io::prelude::*;
    initializing a hashmap for context variables, and passing the contents and 
    hashmap to the evaluate function for further processing. */
 fn main() {
-	let mut file = File::open("main.py").expect("Failed to open file");
+	let mut file = File::open("tmp/main.py").expect("Failed to open file");
     let mut contents = String::new();
     file.read_to_string(&mut contents).expect("Failed to read file");
 
