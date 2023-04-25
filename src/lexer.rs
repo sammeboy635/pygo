@@ -1,49 +1,21 @@
-use regex::Regex;
 
-pub fn lex2(input: &str, operators: &Vec<&str>) -> Vec<String> {
-    let mut tokens: Vec<String> = Vec::new();
 
-    // Construct regular expression from list of operators
-    let mut op_regex = String::new();
-    for op in operators {
-        op_regex.push_str(&format!("{}|", regex::escape(op)));
-    }
-    op_regex.pop(); // Remove trailing "|"
-
-    // Update the format! string to include the op_regex correctly
-    let re_str = format!(
-        "([a-zA-Z0-9_]+)|([=,])|({})|(\"[^\"]*\")",
-        op_regex
-    );
-    let re = Regex::new(&re_str).unwrap();
-
-    // Iterator for finding matches
-    let mut it = re.find_iter(input);
-
-    while let Some(matched) = it.next() {
-        // Add matched token to list of tokens
-        let token = matched.as_str().to_string();
-        tokens.push(token);
-    }
-
-    tokens
-}
-
-pub fn lex(input: &str, operators: &Vec<&str>) -> Vec<String> {
+pub fn lex(input: &str) -> Vec<String> {
+    let operaters = vec!["+", "-", "*", "/", "%", ":", "(", ")", ",", "\n", "\t","#",";"];
     let mut tokens: Vec<String> = Vec::new();
     let mut current_token = String::new();
-    let input_chars: Vec<char> = input.chars().collect();
 
-    for &ch in input_chars.iter() {
-        if ch.is_whitespace() {
+    for ch in input.chars() {
+        if ch.is_ascii_whitespace() || ch == '\t' || ch == '\n' {
             if !current_token.is_empty() {
-                tokens.push(current_token.clone());
-                current_token.clear();
+                tokens.push(current_token.drain(..).collect());
             }
-        } else if operators.contains(&ch.to_string().as_str()) {
+            if ch == '\n' || ch == '\t'{
+                tokens.push(ch.to_string());
+            }
+        } else if operaters.contains(&ch.to_string().as_str()) {
             if !current_token.is_empty() {
-                tokens.push(current_token.clone());
-                current_token.clear();
+                tokens.push(current_token.drain(..).collect());
             }
             tokens.push(ch.to_string());
         } else {
@@ -58,22 +30,23 @@ pub fn lex(input: &str, operators: &Vec<&str>) -> Vec<String> {
     tokens
 }
 
+#[test]
+fn test_lex() {
+	let input = "test2 = 3 + (9 * (5 + 8)) * 3 / 5".to_string();
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+	let tokens = lex(&input);
 
-    #[test]
-    fn test_lex() {
-        let operators = vec!["+", "-", "*", "/", "%", ":", "(", ")"];
-        let input = "test2 = 3 + (9 * (5 + 8)) * 3 / 5".to_string();
+	let expected_tokens = vec![
+		"test2", "=", "3", "+", "(", "9", "*", "(", "5", "+", "8", ")", ")", "*", "3", "/", "5",
+	];
 
-        let tokens = lex(&input, &operators);
+	assert_eq!(tokens, expected_tokens);
+}
 
-        let expected_tokens = vec![
-            "test2", "=", "3", "+", "(", "9", "*", "(", "5", "+", "8", ")", ")", "*", "3", "/", "5",
-        ];
-
-        assert_eq!(tokens, expected_tokens);
-    }
+#[test]
+fn lex_test2(){
+	//let input = "test2 = 3.0 + (9.0 * (5.0 + 8.0)) * 3.0 / 5.0".to_string();
+	let input = "def here():\n\ttest3 = 5".to_string();
+	let tokens = lex(&input);
+	println!("{:?}",tokens);
 }

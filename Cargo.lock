@@ -404,6 +404,7 @@ dependencies = [
  "evalexpr",
  "fancy-regex",
  "lazy_static",
+ "once_cell",
  "regex",
 ]
 

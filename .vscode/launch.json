@@ -7,6 +7,15 @@
 		{
 			"type": "lldb",
 			"request": "launch",
+			"name": "Launch",
+			"program": "${workspaceFolder}/target/debug/pygo",
+			"args": [],
+			"cwd": "${workspaceFolder}"
+		},
+
+		{
+			"type": "lldb",
+			"request": "launch",
 			"name": "Debug executable 'pygo'",
 			"cargo": {
 				"args": [

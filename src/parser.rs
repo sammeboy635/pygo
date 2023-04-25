@@ -1,25 +1,53 @@
-use crate::interpreter::{Instruction, Type};
+
+use crate::ast::{Instruction, Type, MyFunc};
+use std::collections::HashMap;
+
+use crate::standard_library::StdLibFn;
+use crate::standard_library;
+use std::mem;
 pub struct Parser {
     tokens: Vec<String>,
     position: usize,
     recursion_count: i32,
     parenthesis_count: i32,
+	sl: HashMap<String, StdLibFn>,
+	pub custom: HashMap<String, Vec<Instruction>>,
 }
 
 impl Parser {
-    pub fn new(tokens: Vec<String>) -> Self {
+    pub fn new(tokens: Vec<String>, sl: HashMap<String, StdLibFn>) -> Self {
         Parser {
             tokens,
             position: 0,
             recursion_count: 0,
             parenthesis_count: 0,
+			sl,
+			custom: HashMap::new(),
         }
     }
 
-    pub fn advance(&mut self) -> Option<&String> {
+    pub fn advance(&mut self) {
 		self.position += 1;
-        self.peek(0)
     }
+
+	pub fn advance_count(&mut self, count: usize) {
+		self.position += count;
+	}
+
+	pub fn advance_comment(&mut self) {
+		while let Some(token) = self.peek(0) {
+			if token == "\n"  {
+				if let Some(next_token) = self.peek(1) {
+					if next_token.starts_with("#") {
+						self.advance();
+						continue;
+					}
+				}
+				break;
+			}
+			self.advance();
+		}
+	}
 
     pub fn back(&mut self) -> Option<String> {
         let prev_token = self.peek(-1).cloned();
@@ -38,6 +66,13 @@ impl Parser {
             None
         }
     }
+	pub fn peek_compare(&self, offset: isize, target: &str) -> bool {
+		if let Some(token) = self.peek(offset) {
+			token == target
+		} else {
+			false
+		}
+	}
 
     pub fn peek_except(&self, offset: isize, exception: &str) -> Option<&String> {
         let token = self.peek(offset)?;
@@ -47,6 +82,18 @@ impl Parser {
             None
         }
     }
+	pub fn parser_expects(&self, expected_tokens: &[&str]) -> bool {
+		for (i, expected_token) in expected_tokens.iter().enumerate() {
+			if let Some(token) = self.peek_except(i as isize, expected_token) {
+				if token != *expected_token {
+					return false;
+				}
+			} else {
+				return false;
+			}
+		}
+		true
+	}
 
 	pub fn peek_stof(&self, offset: isize) -> Option<f64> {
 		if let Some(token) = self.peek(offset) {
@@ -65,6 +112,25 @@ impl Parser {
 			}
 		}
 		None
+	}
+	pub fn peek_type(&self, offset: isize) -> Type {
+		if let Some(token) = self.peek(offset) {
+			match token.as_str() {
+				"int" => Type::Int(0),
+				"float" => Type::Float(0.0),
+				"double" => Type::Double(0.0), // Assuming doubles are also f64 and are distinguished elsewhere
+				"string" => Type::String("".to_string()),
+				"void" => Type::Void,
+				// Add more cases for custom types as needed
+				_ => Type::Unknown,
+			}
+		} else {
+			panic!("Should have token at offset");
+		}
+	}
+	
+	pub fn peek_function(&self, token: &String) -> Option<&StdLibFn>{
+		return self.sl.get(token);
 	}
 
 	pub fn peek_operator_priority(&self) -> bool{
@@ -121,14 +187,26 @@ impl Parser {
 			false
 		}
 	}
+	pub fn is_variable_function(&self, offset: isize) -> bool{
+		let token = match self.peek(offset) {
+			Some(t) => t,
+			None => return false,
+		};
+
+		match self.sl.get(token){
+			Some(_) => true,
+			None => return false,
+		}
+	}
+
 	pub fn is_variable_number(&self, offset: isize) -> bool {
 		self.peek(offset).unwrap().parse::<i64>().is_ok() || self.peek(offset).unwrap().parse::<f64>().is_ok()
 	}
 	pub fn is_variable_float(&self, offset: isize) -> bool {
-        self.peek(offset).unwrap().parse::<i64>().is_ok()
+        self.peek(offset).unwrap().parse::<f64>().is_ok()
     }
 	pub fn is_variable_int(&self, offset: isize) -> bool {
-        self.peek(offset).unwrap().parse::<f64>().is_ok()
+        self.peek(offset).unwrap().parse::<i64>().is_ok()
     }
 	
 	pub fn get_recursion(&mut self) -> i32{
@@ -162,46 +240,56 @@ impl Parser {
 }
 
 pub fn parse_expression(parser: &mut Parser, instructions: &mut Vec<Instruction>) {
+	parser.inc_recursion();
 	while let Some(cur_token) = parser.peek(0) {
+		// println!("{:?}", cur_token);
+		// println!("{:?}", instructions);
+	
 		match cur_token.as_str()  {
-			"(" => {parser.inc_parenthesis(); parser.advance(); parse_expression(parser, instructions);},
-			")" => {parser.dec_parenthesis(); return;}
-			"+" | "-" | "*" | "/" | "%" | "^" => parse_pemdas(parser,instructions, 0),
+			"(" => {parser.inc_parenthesis(); parser.advance();parse_expression(parser, instructions);},
+			")" => {parser.dec_parenthesis(); parser.dec_recursion(); return;}
+			"+" => {parse_pemdas(parser,instructions); instructions.push(Instruction::Add);},
+			"-" => {parse_pemdas(parser,instructions); instructions.push(Instruction::Sub);},
+			"*" => {parse_pemdas(parser,instructions); instructions.push(Instruction::Mul);},
+			"/" => {parse_pemdas(parser,instructions); instructions.push(Instruction::Div);},
+			"%" => {parse_pemdas(parser,instructions); instructions.push(Instruction::Modulo)},
+			"^" => {parse_pemdas(parser,instructions); instructions.push(Instruction::Exp);},
 			"=" => (),
+			"\n" => {
+				let mut should_return = false;
+				if parser.get_recursion() > 1{
+					should_return = true;
+				}else if !instructions.is_empty(){
+					match instructions.last().unwrap() {
+						Instruction::End => (),
+						_ => instructions.push(Instruction::End),
+					}
+				}
+				if should_return{
+					return;
+				}
+			},
+			";" => {parser.dec_recursion(); return;},//Type defintion or end of function.
+			"#" => parser.advance_comment(),
+			"def" => parse_definition(parser),
 			_ if parser.is_variable_number(0) => parse_value(parser, instructions, 0),
 			_ if parser.is_variable_name(0) => parse_var(parser, instructions, 0),
-			_ if parser.is_variable_string(0) => (),
+			_ if parser.is_variable_string(0) => instructions.push(Instruction::Push(Type::String(cur_token.to_string()))),
 			_ => (),//println!("Unknown token{:?}", cur_token),
 		}
 		parser.advance();
 	}
+	parser.dec_recursion();
 	parser.is_ok();
 }
-pub fn parse_pemdas(parser: &mut Parser, instructions: &mut Vec<Instruction>, offset: isize){
-	let cur_token = match parser.peek(offset){
-		Some(token) => token.to_owned(),
-		None => return,
-	};
-	//println!("{:?}", parser.peek_operator_priority());
-	if parser.peek_operator_priority(){
-		{
-			parser.advance();
-			parse_expression(parser, instructions);
-		}
-	}else{
+pub fn parse_pemdas(parser: &mut Parser, instructions: &mut Vec<Instruction>){
+	if parser.peek_operator_priority(){ // Check next operator Prority
+		parser.advance();
+		parse_expression(parser, instructions);
+		
+	}else{ // Grab the the next value. But this wont work with functions.
 		parser.advance();
 		parse_value(parser, instructions, 0);
-		//println!("{:?}", instructions);
-	}
-
-	match cur_token.as_str() {
-		"+" => instructions.push(Instruction::Add),
-		"-" => instructions.push(Instruction::Sub),
-		"*" => instructions.push(Instruction::Mul),
-		"/" => instructions.push(Instruction::Div),
-		"%" => instructions.push(Instruction::Modulo),
-		"^" => instructions.push(Instruction::Exp),
-		_ => unimplemented!("{:?}", cur_token)
 	}
 }
 
@@ -213,25 +301,74 @@ pub fn parse_value(parser: &mut Parser, instructions: &mut Vec<Instruction>, off
 	let ret_instruction = match cur_token.as_str() {
 		_ if parser.is_variable_int(offset) => Instruction::Push(Type::Int(parser.peek_stoi(offset).unwrap())),
 		_ if parser.is_variable_float(offset) => Instruction::Push(Type::Float(parser.peek_stof(offset).unwrap())),
-		_ =>  unimplemented!("{:?}", cur_token),
+		_ if parser.is_variable_name(offset) => {parse_var(parser,instructions,offset); return;},
+		_ => panic!("here"),
 	};
 
 	instructions.push(ret_instruction);
 }
+
 pub fn parse_var(parser: &mut Parser, instructions: &mut Vec<Instruction>, offset: isize){
 	let cur_token = match parser.peek(offset){
-		Some(token) => token,
+		Some(token) => token.clone(),
 		None => return,
 	};
+	
 	let next_token = match parser.peek(offset+1){ //TODO! Probably dont want to manualy check for =
-		Some(token) => token,
-		None => return,
+		Some(token) => token.clone(),
+		None => {instructions.push(Instruction::Load(cur_token.clone(), Type::Unknown)); return;},
 	};
-
-	let ret_instruction = match cur_token.as_str() {
-		_ if next_token == "=" => Instruction::SetVar(cur_token.clone(), Type::Unknown), //TODO! Set type at the end.
+	
+	println!("{:?}", parser.peek(0));
+	let ret_instruction = match next_token.as_str() {
+		":" => {parser.advance(); Instruction::SetVar(cur_token.clone(), parser.peek_type(offset))},
+		"=" => {parser.advance(); Instruction::SetVar(cur_token.clone(), Type::Unknown)}, //TODO! Set type at the end.
+		"(" => parse_func(parser, &cur_token),
 		_ => Instruction::Load(cur_token.clone(), Type::Unknown), // TODO! look up Type here to see if it exsists
 	};
 
 	instructions.push(ret_instruction);
+
+}
+
+pub fn parse_func(parser: &mut Parser, func : &String) -> Instruction{
+	parser.inc_parenthesis();
+	println!("{:?}",parser.custom);
+	if parser.custom.contains_key(func){
+		let mut args: Vec<Instruction> = vec![];
+		parse_expression(parser, &mut args);
+		return Instruction::CustomCall(func.clone(), mem::take(&mut args), vec![])
+	}
+	
+	let mut args = vec![];
+	parse_expression(parser, &mut args);
+
+	return Instruction::Call(
+        func.clone(),
+		Type::String("Hello_world".to_string()),
+		MyFunc::new(standard_library::print),
+	);
+}
+
+pub fn parse_definition(parser: &mut Parser){
+	parser.advance();
+	if parser.is_variable_name(0){
+		let func = parser.peek(0).unwrap().to_owned();
+		parser.advance();
+		let mut args: Vec<Instruction> = vec![];
+		parse_expression(parser, &mut args);
+		println!("args{:?}",args);
+		let mut instructions: Vec<Instruction> = vec![];
+		parse_expression(parser, &mut instructions);
+		println!("{:?}", instructions);
+		parser.custom.insert(func, instructions);
+		println!("{:?}",parser.custom);
+	}
+	//println!("{:?}",parser.peek(0).unwrap());
+	// if(parser.is_variable_name(1)){
+	// 	let func = parser.peek(1).unwrap();
+		//let args = parser.grab_args();
+		//let args_return = parser.grab_return();
+		//let instructions = parser.parse_expression
+	//}
 }

@@ -3,47 +3,69 @@
 
 mod lexer;
 mod parser;
-
+mod ast;
+mod test;
 mod interpreter;
 mod timer;
+mod standard_library;
 
 use crate::lexer::lex;
 use crate::parser::{Parser, parse_expression};
 use crate::interpreter::interpret;
 use crate::timer::Timer;
+use crate::ast::{Instruction,Type};
 
+use crate::standard_library::standard_library;
 use std::time::{Instant};
 use std::collections::HashMap;
 use evalexpr::*;
-//Lexing: 874 us
-//Parsing: 1279 us
+use std::fs::File;
+use std::io::prelude::*;
+
+
+/* In the main function, we are opening a file, reading its contents,
+   initializing a hashmap for context variables, and passing the contents and 
+   hashmap to the evaluate function for further processing. */
 fn main() {
-	let operaters = vec!["+", "-", "*", "/", "%",":","(",")"];
-	let input = "test2 = 3 + (9 * (5 + 8)) * 3 / 5".to_string();
+	let mut file = File::open("main.py").expect("Failed to open file");
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).expect("Failed to read file");
 
+ 	let mut context_varibles: HashMap<String, Type> = HashMap::new();
+
+	evaluate(contents, &mut context_varibles);
+	println!("{:?}", context_varibles);
+}
+/* The evaluate function takes a string input and a mutable reference to a hashmap of context variables.
+ 	It first initializes a standard library and a timer, 
+ 	The lexer takes the input string to obtain tokens, and passes the tokens to the parser. 
+  	The parser generates a vector of instructions that are then passed to the interpreter.
+	The interpreter then interprets the instructions while also updating the context variables hashmap. 
+	
+	Finally, the function prints the context variables hashmap 
+	and the time taken for each step in the processing pipeline. */
+fn evaluate(input : String, context_varibles: &mut HashMap<String, Type>){
+	
+	let sl = standard_library();
 	let mut timer = Timer::new();
-	let tokens = lex(&input, &operaters);
-	timer.end("Lexing");
-	println!("{:?}", tokens);
 
-	let mut vari: HashMap<String, interpreter::Type> = HashMap::new();
-	let mut parser = Parser::new(tokens);
+	let tokens = lex(&input);
+	timer.end_us("Lexing");
+
+	println!("{:?}", tokens);
+	
+	let mut parser = Parser::new(tokens, sl);
 	let mut instructions = vec![];
 	parse_expression(&mut parser, &mut instructions);
-	timer.end("Parsing");
+	timer.end_us("Parsing");
+	println!("{:?}", instructions);
+	let mut index = 0;
+	let interp = interpret(&instructions, context_varibles, &parser.custom, &mut index);
+	//println!("interpreting: {:?}", );
+	timer.end_us("Interpreting");
 
-	println!("interpreting: {:?}", interpret(&instructions, &mut vari));
-	timer.end("Interpreting");
-	
+	timer.print(&format!("{:?}", interp).to_string());
+	println!();
 
-	timer.start();
-	let expression = "3 + (9 * (5 + 8)) * 3 / 5";
-    match eval(expression) {
-        Ok(result) => println!("The result of the expression is: {}", result),
-        Err(error) => println!("Error: {}", error),
-    }
-	timer.end("Evaluating");
-
-	println!("{:?}", vari);
 }
 

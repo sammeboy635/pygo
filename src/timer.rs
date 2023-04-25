@@ -1,25 +1,31 @@
+use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 pub struct Timer {
-    start_time: Option<Instant>,
+    start_time: Instant,
+    end_times: HashMap<String, Instant>,
 }
 
 impl Timer {
     pub fn new() -> Self {
-        Self { start_time: Some(Instant::now()) }
-    }
-
-    pub fn start(&mut self) {
-        self.start_time = Some(Instant::now());
-    }
-
-    pub fn end(&self, message: &str) {
-        if let Some(start_time) = self.start_time {
-            let elapsed = start_time.elapsed();
-            let micros = elapsed.as_micros();
-			println!("{}: {} us", message, micros);
-        } else {
-            println!("Timer not started.");
+        Timer {
+            start_time: Instant::now(),
+            end_times: HashMap::new(),
         }
+    }
+
+    pub fn end_us(&mut self, key: &str) {
+        self.end_times.insert(key.to_owned(), Instant::now());
+    }
+
+    pub fn print(&self, message: &str) {
+        let elapsed = self.start_time.elapsed();
+        print!("{}: {} microseconds ||", message, elapsed.as_micros());
+
+        for (key, value) in &self.end_times {
+            let elapsed = value.duration_since(self.start_time);
+            print!(" {}: {} microseconds ||", key, elapsed.as_micros());
+        }
+		println!("");
     }
 }

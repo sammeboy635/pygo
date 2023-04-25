@@ -1,5 +1,5 @@
 use pygo::parser::{Parser, parse_expression}; // Replace 'my_crate_name' with the name of your crate
-
+use pygo::standard_library::standard_library;
 use criterion::{criterion_group, criterion_main, Criterion};
 
 
@@ -15,7 +15,7 @@ fn parser_benchmark(c: &mut Criterion) {
 
     c.bench_function("parse_expression", |b| {
         b.iter(|| {
-            let mut parser = Parser::new(tokens.clone());
+            let mut parser = Parser::new(tokens.clone(),standard_library());
             let mut instructions = vec![];
             parse_expression(&mut parser, &mut instructions);
         })
