@@ -1,21 +1,22 @@
 #![allow(warnings)]
 #![allow(unused_imports)]
 
-mod lexer;
-mod parser;
-mod ast;
-mod test;
-mod interpreter;
-mod timer;
-mod standard_library;
 
-use crate::lexer::lex;
-use crate::parser::{Parser, parse_expression};
-use crate::interpreter::interpret;
-use crate::timer::Timer;
-use crate::ast::{Instruction,Type};
+mod Interpreter;
+use crate::Interpreter::lexer::lex;
+use crate::Interpreter::parser::{Parser, parse_expression};
+use crate::Interpreter::interpreter::interpret;
 
-use crate::standard_library::standard_library;
+mod PygoTypes;
+use crate::PygoTypes::pygo_type::Type;
+
+mod StandardLib;
+use crate::StandardLib::standard_library::standard_library;
+
+mod Utils;
+use crate::Utils::timer::Timer;
+
+
 use std::time::{Instant};
 use std::collections::HashMap;
 use evalexpr::*;

@@ -1,8 +1,9 @@
 
-use crate::ast::{Instruction, Type};
-use crate::ast::Instruction::*;
+use crate::PygoTypes::pygo_type::{Type};
+use crate::PygoTypes::pygo_instruction::{Instruction, Instruction::*};
 
-use std::{collections::HashMap};
+
+use std::collections::HashMap;
 
 
 pub fn interpret(code: &[Instruction], variables: &mut HashMap<String, Type>, custom: &HashMap<String, Vec<Instruction>>, index: &mut isize) -> Type {

@@ -1,10 +1,13 @@
+use crate::PygoTypes::pygo_function::MyFunc;
+use crate::PygoTypes::pygo_type::{Type};
+use crate::PygoTypes::pygo_instruction::Instruction;
 
-use crate::ast::{Instruction, Type, MyFunc};
+use crate::StandardLib::standard_library::StdLibFn;
+use crate::StandardLib::standard_library;
+
 use std::collections::HashMap;
-
-use crate::standard_library::StdLibFn;
-use crate::standard_library;
 use std::mem;
+
 pub struct Parser {
     tokens: Vec<String>,
     position: usize,

@@ -1,3 +1,18 @@
+
+# Rust Quickstart Guide
+
+This repository contains Rust code for [insert project name here]. Follow these steps to get started:
+
+## Installation
+
+1. Install Rust by following the instructions on the [Rust website](https://www.rust-lang.org/tools/install).
+2. Clone this repository to your local machine.
+3. Navigate to the cloned directory.
+4. Run the project using the following command:
+```cmd
+cargo run
+```
+
 # Lexer
 The lexer in this interpreter is responsible for breaking down the input string into tokens that can be processed by the parser. The lex function in main.rs performs this task.
 

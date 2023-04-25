@@ -1,6 +1,4 @@
-
-use crate::ast::Type;
-
+use crate::PygoTypes::pygo_type::Type;
 
 use std::collections::HashMap;
 
