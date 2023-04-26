@@ -44,6 +44,10 @@ enum PygoToken {
     COMPLEX_LITERAL,
     BOOLEAN_LITERAL(bool),
     NONE_LITERAL,
+
+	// Parenthesis
+	OPEN_PAREN,
+	CLOSED_PAREN,
     
     // Operators
     ADDITION,
@@ -81,6 +85,11 @@ enum PygoToken {
     BITWISE_XOR_ASSIGNMENT,
     LEFT_SHIFT_ASSIGNMENT,
     RIGHT_SHIFT_ASSIGNMENT,
+
+	// Format
+	END,
+	TAB(i32),
+	COMMA,
 }
 
 
@@ -119,6 +128,7 @@ impl<'a> Tokenizer<'a> {
 			("nonlocal", PygoToken::NONLOCAL),
 			("assert", PygoToken::ASSERT),
 			("lambda", PygoToken::LAMBDA),
+			("None", PygoToken::NONE_LITERAL),
 		]
 		.iter()
 		.cloned()
@@ -176,12 +186,38 @@ impl<'a> Tokenizer<'a> {
         let mut tokens = Vec::new();
 
         while let Some(&c) = self.input.peek() {
+			// println!("{:?}",tokens);
+			// println!("{:?}",c);
+
             match c {
-                // Implement tokenization logic here.
-                // For example:
-                ' ' | '\n' | '\t' => {
-                    self.input.next();
-                }
+				'?' => {
+					self.input.next();
+					continue;
+				},
+				'\n' => {
+					// Checks for empty list and if End was the last Token
+					if (!tokens.is_empty() && (*tokens.last().unwrap_or(&PygoToken::NONE_LITERAL) != PygoToken::END)) {
+						tokens.push(PygoToken::END);
+					}
+					// Handles the \n
+					if let Some(new_token) = self.parse_handle_endline_checks() {
+						tokens.push(new_token);
+					}
+				},
+                ' ' | '\t' | '\r' | ':' => {self.input.next();},
+				'#' => self.skip_comment(),
+				'(' => {
+					self.input.next();
+					tokens.push(PygoToken::OPEN_PAREN);
+				},
+				')' => {
+					self.input.next();
+					tokens.push(PygoToken::CLOSED_PAREN);
+				},
+				',' => {
+					self.input.next();
+					tokens.push(PygoToken::COMMA);
+				}
                 _ => {
                     if let Some(token) = self.parse_identifier_or_keyword(tokens.last()) {
                         tokens.push(token);
@@ -226,8 +262,9 @@ impl<'a> Tokenizer<'a> {
 			}
             
             // Peek the next non-whitespace character
+			let mut count = 0;
 			while let Some(&c) = self.input.peek() {
-				if !c.is_whitespace() {
+				if (c == '\n' || !c.is_whitespace()) {
 					break;
 				}
 				self.input.next();
@@ -314,43 +351,72 @@ impl<'a> Tokenizer<'a> {
 			Some(PygoToken::NONE_LITERAL)
 		}
     }
-	fn parse_handle_endline(&mut self){
+	fn parse_handle_endline_checks(&mut self) -> Option<PygoToken>{
 		self.input.next();
 		let mut current_indentation = 0;
 		while let Some(&next_char) = self.input.peek() {
 			if next_char == '\t' {
 				current_indentation += 1;
-				self.input.next();
+			} else if next_char == '\n'{
+				current_indentation = 0;
 			} else {
 				break;
 			}
+			self.input.next();
 		}
-		if current_indentation != self.indentation_level {
-			panic!(
-				"Incorrect indentation: expected {} tabs, found {}",
-				self.indentation_level, current_indentation
-			);
+		if current_indentation == 0{
+			return None;
 		}
+		return Some(PygoToken::TAB(current_indentation));
 	}
+	fn skip_comment(&mut self) {
+        while let Some(&c) = self.input.peek() {
+            if c == '\n' {
+                break;
+            } else {
+                self.input.next();
+            }
+        }
+    }
 }
+
+use std::fs::File;
+use std::io::prelude::*;
+
+pub fn load_file(file_name: &str) -> String{
+	let mut file = File::open(file_name).expect("Failed to open file");
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).expect("Failed to read file");
+	return contents;
+}
+
+fn print_tokens(tokens: &Vec<PygoToken>) {
+	println!("\n");
+    for token in tokens {
+		if let PygoToken::TAB(val) = token{
+			for i in 0..*val{
+				print!("\t");
+			}
+		}else{
+			print!("{:?} ", token);
+		}
+        
+        if let PygoToken::END = token {
+            println!(); // add a newline after END token
+        }
+    }
+	println!("\n");
+}
+
 use crate::Utils::timer::Timer;
-#[test]
-fn main2() {
-    let code = r#"
-		#test
-        import math
-        def my_function(x):
-            if x > 0:
-                return x ** 2
-            else:
-                return -x
-		test=5
-    "#;
+
+pub fn main2() {
+	let binding = load_file("tmp/main.py");
+    let code = binding.as_str();
 	
     let mut tokenizer = Tokenizer::new(code);
 	let mut timer = Timer::new();
     let tokens = tokenizer.tokenize();
 	timer.print("Done");
-
-    println!("{:?}", tokens);
+	print_tokens(&tokens);
 }
