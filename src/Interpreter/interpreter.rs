@@ -26,9 +26,6 @@ impl<'a> Interpret<'a>{
         }
     }
 	pub fn interpret(&mut self, variables: &mut HashMap<String, Type>) -> Type{
-		println!("{:?}", self.code);
-		if self.code.len() == 0{return Type::Void;}
-
 		while let Some(instruction) = self.code.pop_front(){
 			match instruction {
 				Add | Sub | Mul | Div | Exp | Modulo => self.operations(&instruction),
@@ -36,7 +33,6 @@ impl<'a> Interpret<'a>{
 				CustomCall(func,_,_) =>  {
 					let new_code = self.functions.get(&func).unwrap();
 					self.interpret(variables);
-					//self.interpret(variables);
 				},
 				Load(name, _) => self.stack.push(variables.get(&name).unwrap().clone()),
 				Push(val) => self.stack.push(val.clone()),

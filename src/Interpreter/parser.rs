@@ -131,7 +131,15 @@ impl Parser {
 			panic!("Should have token at offset");
 		}
 	}
-	
+
+	pub fn peek_tabs(&mut self){
+		let mut offset = 0;
+		while self.peek_compare(offset , "\t" ){
+			offset += 1;
+		}
+		self.advance_count(offset as usize);
+	}
+
 	pub fn peek_function(&self, token: &String) -> Option<&StdLibFn>{
 		return self.sl.get(token);
 	}
@@ -251,6 +259,7 @@ pub fn parse_expression(parser: &mut Parser, instructions: &mut Vec<Instruction>
 		match cur_token.as_str()  {
 			"(" => {parser.inc_parenthesis(); parser.advance(); parse_expression(parser, instructions);},
 			")" => {parser.dec_parenthesis(); parser.dec_recursion(); return;}
+			";" => {parser.dec_recursion(); return;},//Type defintion or end of function. Temp
 			"+" => {parse_pemdas(parser,instructions); instructions.push(Instruction::Add);},
 			"-" => {parse_pemdas(parser,instructions); instructions.push(Instruction::Sub);},
 			"*" => {parse_pemdas(parser,instructions); instructions.push(Instruction::Mul);},
@@ -258,23 +267,10 @@ pub fn parse_expression(parser: &mut Parser, instructions: &mut Vec<Instruction>
 			"%" => {parse_pemdas(parser,instructions); instructions.push(Instruction::Modulo)},
 			"^" => {parse_pemdas(parser,instructions); instructions.push(Instruction::Exp);},
 			"=" => (),
-			"\n" => {
-				let mut should_return = false;
-				if parser.get_recursion() > 1{
-					should_return = true;
-				}else if !instructions.is_empty(){
-					match instructions.last().unwrap() {
-						Instruction::End => (),
-						_ => instructions.push(Instruction::End),
-					}
-				}
-				if should_return{
-					return;
-				}
-			},
-			";" => {parser.dec_recursion(); return;},//Type defintion or end of function.
+			"\n" => if parse_newline(parser, instructions){return;},
 			"#" => parser.advance_comment(),
 			"def" => parse_definition(parser),
+			"return" => {return;}
 			_ if parser.is_variable_number(0) => parse_value(parser, instructions, 0),
 			_ if parser.is_variable_name(0) => parse_var(parser, instructions, 0),
 			_ if parser.is_variable_string(0) => instructions.push(Instruction::Push(Type::String(cur_token.to_string()))),
@@ -285,6 +281,7 @@ pub fn parse_expression(parser: &mut Parser, instructions: &mut Vec<Instruction>
 	parser.dec_recursion();
 	parser.is_ok();
 }
+
 pub fn parse_pemdas(parser: &mut Parser, instructions: &mut Vec<Instruction>){
 	if parser.peek_operator_priority(){ // Check next operator Prority
 		parser.advance();
@@ -374,4 +371,17 @@ pub fn parse_definition(parser: &mut Parser){
 		//let args_return = parser.grab_return();
 		//let instructions = parser.parse_expression
 	//}
+}
+pub fn parse_newline(parser: &mut Parser, instructions: &mut Vec<Instruction>) -> bool{
+	let mut should_return = false;
+	if parser.get_recursion() > 1{
+		should_return = true;
+	}else if !instructions.is_empty(){
+		match instructions.last().unwrap() {
+			Instruction::End => (),
+			_ => instructions.push(Instruction::End),
+		}
+	}
+	should_return
+
 }

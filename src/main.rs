@@ -3,7 +3,7 @@
 
 
 mod Interpreter;
-use crate::Interpreter::lexer::lex;
+use crate::Interpreter::lexer::{lex, load_file};
 use crate::Interpreter::parser::{Parser, parse_expression};
 use crate::Interpreter::interpreter::Interpret;
 
@@ -20,21 +20,16 @@ use crate::Utils::timer::Timer;
 use std::time::{Instant};
 use std::collections::HashMap;
 use evalexpr::*;
-use std::fs::File;
-use std::io::prelude::*;
+
+
 use std::collections::VecDeque;
 
 /* In the main function, we are opening a file, reading its contents,
    initializing a hashmap for context variables, and passing the contents and 
    hashmap to the evaluate function for further processing. */
 fn main() {
-	let mut file = File::open("tmp/main.py").expect("Failed to open file");
-    let mut contents = String::new();
-    file.read_to_string(&mut contents).expect("Failed to read file");
-
  	let mut context_varibles: HashMap<String, Type> = HashMap::new();
-
-	evaluate(contents, &mut context_varibles);
+	evaluate( &mut context_varibles);
 	println!("{:?}", context_varibles);
 }
 /* The evaluate function takes a string input and a mutable reference to a hashmap of context variables.
@@ -45,7 +40,9 @@ fn main() {
 	
 	Finally, the function prints the context variables hashmap 
 	and the time taken for each step in the processing pipeline. */
-fn evaluate(input : String, context_varibles: &mut HashMap<String, Type>){
+fn evaluate(context_varibles: &mut HashMap<String, Type>){
+	let input = load_file("tmp/main.py");
+	
 	let mut timer = Timer::new();
 	let sl = standard_library();
 	

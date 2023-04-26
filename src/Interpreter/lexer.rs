@@ -1,4 +1,13 @@
 
+use std::fs::File;
+use std::io::prelude::*;
+
+pub fn load_file(file_name: &str) -> String{
+	let mut file = File::open(file_name).expect("Failed to open file");
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).expect("Failed to read file");
+	return contents;
+}
 
 pub fn lex(input: &str) -> Vec<String> {
     let operaters = vec!["+", "-", "*", "/", "%", ":", "(", ")", ",", "\n", "\t","#",";"];
