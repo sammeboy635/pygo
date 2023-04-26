@@ -1,55 +1,77 @@
-
-use crate::PygoTypes::pygo_type::{Type};
+use crate::PygoTypes::pygo_type::Type;
+use crate::PygoTypes::pygo_function::Function;
 use crate::PygoTypes::pygo_instruction::{Instruction, Instruction::*};
 
 
 use std::collections::HashMap;
+use std::collections::VecDeque;
+pub struct Interpret<'a> {
+    global_variables: HashMap<String, Type>,
+	std_lib_functions: HashMap<String, Function>,
+    functions: HashMap<String, Function>,
+	stack : Vec<Type>,
+	code : &'a mut VecDeque<Instruction>,
+	index : isize,
+}
 
-
-pub fn interpret(code: &[Instruction], variables: &mut HashMap<String, Type>, custom: &HashMap<String, Vec<Instruction>>, index: &mut isize) -> Type {
-	println!("{:?}",code);
-	if code.len() == 0{return Type::Void;}
-    let mut stack: Vec<Type> = Vec::new();
-	while let Some(instruction) = code.get(*index as usize){
-		*index += 1;
-        match instruction {
-			Add | Sub | Mul | Div | Exp | Modulo => {
-				let right = stack.pop().unwrap();
-                let left = stack.pop().unwrap();
-				stack.push(operations(instruction, left, right));
-			}
-			Call(_, args, func) => {
-				func.call(args.clone());
-			},
-			CustomCall(func,_,_) =>  {
-				let new_code = custom.get(func).unwrap();
-				interpret(new_code, variables, custom, index);},
-			Load(name, _) => stack.push(variables.get(name).unwrap().clone()),
-            Push(val) => stack.push(val.clone()),
-			SetVar(name, _) => {
-				let test = name.clone();
-				let vall = interpret(&code, variables, custom, index);
-				println!("{:?}, {:?}",test,vall);
-				variables.insert(test, vall);
-			},
-			End => return stack.pop().unwrap(),
-			_ => todo!(),
+impl<'a> Interpret<'a>{
+    pub fn new(code: &'a mut VecDeque<Instruction>) -> Self {
+        Interpret {
+            global_variables: HashMap::new(),
+            std_lib_functions: HashMap::new(),
+            functions: HashMap::new(),
+			stack: Vec::new(),
+            code,
+			index: 0,
         }
     }
-	if stack.len() == 0 {return Type::Void;}
-    return stack.pop().unwrap();
+	pub fn interpret(&mut self, variables: &mut HashMap<String, Type>) -> Type{
+		println!("{:?}", self.code);
+		if self.code.len() == 0{return Type::Void;}
+
+		while let Some(instruction) = self.code.pop_front(){
+			match instruction {
+				Add | Sub | Mul | Div | Exp | Modulo => self.operations(&instruction),
+				Call(_, args, func) => {func.call(args.clone());},
+				CustomCall(func,_,_) =>  {
+					let new_code = self.functions.get(&func).unwrap();
+					self.interpret(variables);
+					//self.interpret(variables);
+				},
+				Load(name, _) => self.stack.push(variables.get(&name).unwrap().clone()),
+				Push(val) => self.stack.push(val.clone()),
+				SetVar(name, _) => {
+					let test = name.clone();
+					let vall = self.interpret(variables);
+					println!("{:?}, {:?}",test,vall);
+					variables.insert(test, vall);
+				},
+				End => return self.stack.pop().unwrap(),
+				_ => todo!(),
+			}
+		}
+		if self.stack.len() == 0 {return Type::Void;}
+		return self.stack.pop().unwrap();
+
+		}
+
+		pub fn operations(&mut self, instruction : &Instruction){
+			let right = self.stack.pop().unwrap();
+			let left = self.stack.pop().unwrap();
+			let val = match instruction {
+				Add => left + right,
+				Sub => left - right,
+				Mul => left * right,
+				Div => left / right,
+				Exp => left.exp(&right),
+				Modulo => left % right,
+				_ => panic!("Unsupported operation"),
+			};
+			self.stack.push(val);
+		}
 }
-fn operations(instruction: &Instruction, left: Type, right: Type) -> Type{
-	match instruction {
-		Add => left + right,
-		Sub => left - right,
-		Mul => left * right,
-		Div => left / right,
-		Exp => left.exp(&right),
-		Modulo => left % right,
-		_ => panic!("Unsupported operation"),
-	}
-}
+
+
 
 
 

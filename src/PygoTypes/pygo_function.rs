@@ -1,24 +1,30 @@
 use crate::PygoTypes::pygo_type::Type;
 
 use std::rc::Rc;
-pub struct MyFunc(Rc<dyn Fn(Type) -> Type>);
+pub struct Function{
+	pub func: Rc<dyn Fn(Type) -> Type>
+}
 
-impl Clone for MyFunc {
+impl Clone for Function {
     fn clone(&self) -> Self {
-        MyFunc(Rc::clone(&self.0))
+        Function{
+			func: Rc::clone(&self.func)
+		}
     }
 }
 
-impl MyFunc {
+impl Function {
     pub fn new<F>(f: F) -> Self
     where
         F: 'static + Fn(Type) -> Type,
     {
-        MyFunc(Rc::new(f))
+        Function{
+			func: Rc::new(f)
+		}
     }
 
     pub fn call(&self, arg: Type) -> Type {
-        (self.0)(arg)
+        (self.func)(arg)
     }
 }
 

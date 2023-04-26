@@ -1,5 +1,5 @@
 // benches/lex_benchmark.rs
-use pygo::lexer::lex;
+use pygo::Interpreter::lexer::lex;
 use criterion::{criterion_group, criterion_main, Criterion};
 
 

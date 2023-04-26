@@ -1,5 +1,5 @@
-use crate::PygoTypes::pygo_function::MyFunc;
-use crate::PygoTypes::pygo_type::{Type};
+use crate::PygoTypes::pygo_function::Function;
+use crate::PygoTypes::pygo_type::Type;
 use crate::PygoTypes::pygo_instruction::Instruction;
 
 use crate::StandardLib::standard_library::StdLibFn;
@@ -249,7 +249,7 @@ pub fn parse_expression(parser: &mut Parser, instructions: &mut Vec<Instruction>
 		// println!("{:?}", instructions);
 	
 		match cur_token.as_str()  {
-			"(" => {parser.inc_parenthesis(); parser.advance();parse_expression(parser, instructions);},
+			"(" => {parser.inc_parenthesis(); parser.advance(); parse_expression(parser, instructions);},
 			")" => {parser.dec_parenthesis(); parser.dec_recursion(); return;}
 			"+" => {parse_pemdas(parser,instructions); instructions.push(Instruction::Add);},
 			"-" => {parse_pemdas(parser,instructions); instructions.push(Instruction::Sub);},
@@ -349,7 +349,7 @@ pub fn parse_func(parser: &mut Parser, func : &String) -> Instruction{
 	return Instruction::Call(
         func.clone(),
 		Type::String("Hello_world".to_string()),
-		MyFunc::new(standard_library::print),
+		Function::new(standard_library::print),
 	);
 }
 

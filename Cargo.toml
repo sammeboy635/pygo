@@ -15,9 +15,11 @@ regex = "1.7.3"
 
 [[bench]]
 name = "lex_benchmark"
+path = "src/benches/lex_benchmark"
 harness = false
 
 [[bench]]
 name = "parser_benchmark"
+path = "src/benches/parser_benchmark"
 harness = false
 

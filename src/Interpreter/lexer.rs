@@ -22,7 +22,6 @@ pub fn lex(input: &str) -> Vec<String> {
             current_token.push(ch);
         }
     }
-
     if !current_token.is_empty() {
         tokens.push(current_token);
     }

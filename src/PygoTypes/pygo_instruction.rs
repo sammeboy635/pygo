@@ -1,5 +1,5 @@
 use crate::PygoTypes::pygo_type::Type;
-use crate::PygoTypes::pygo_function::MyFunc;
+use crate::PygoTypes::pygo_function::Function;
 
 #[derive()]
 pub enum Instruction {
@@ -11,7 +11,7 @@ pub enum Instruction {
 	Exp,
 	End,
 	Arg(Vec<Type>),
-	Call(String, Type, MyFunc),
+	Call(String, Type, Function),
     Load(String, Type),
 	Push(Type),
 	SetVar(String, Type),

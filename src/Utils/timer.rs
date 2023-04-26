@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::time::{Duration, Instant};
+use std::time::{Instant};
 
 pub struct Timer {
     start_time: Instant,

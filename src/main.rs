@@ -5,7 +5,7 @@
 mod Interpreter;
 use crate::Interpreter::lexer::lex;
 use crate::Interpreter::parser::{Parser, parse_expression};
-use crate::Interpreter::interpreter::interpret;
+use crate::Interpreter::interpreter::Interpret;
 
 mod PygoTypes;
 use crate::PygoTypes::pygo_type::Type;
@@ -22,7 +22,7 @@ use std::collections::HashMap;
 use evalexpr::*;
 use std::fs::File;
 use std::io::prelude::*;
-
+use std::collections::VecDeque;
 
 /* In the main function, we are opening a file, reading its contents,
    initializing a hashmap for context variables, and passing the contents and 
@@ -46,9 +46,9 @@ fn main() {
 	Finally, the function prints the context variables hashmap 
 	and the time taken for each step in the processing pipeline. */
 fn evaluate(input : String, context_varibles: &mut HashMap<String, Type>){
-	
-	let sl = standard_library();
 	let mut timer = Timer::new();
+	let sl = standard_library();
+	
 
 	let tokens = lex(&input);
 	timer.end_us("Lexing");
@@ -59,13 +59,15 @@ fn evaluate(input : String, context_varibles: &mut HashMap<String, Type>){
 	let mut instructions = vec![];
 	parse_expression(&mut parser, &mut instructions);
 	timer.end_us("Parsing");
-	println!("{:?}", instructions);
-	let mut index = 0;
-	let interp = interpret(&instructions, context_varibles, &parser.custom, &mut index);
-	//println!("interpreting: {:?}", );
+
+
+	let mut deque = VecDeque::new();
+	deque.extend(instructions);
+	let mut interp = Interpret::new(&mut deque);
+	let out = interp.interpret(context_varibles);
 	timer.end_us("Interpreting");
 
-	timer.print(&format!("{:?}", interp).to_string());
+	timer.print(&format!("{:?}", out).to_string());
 	println!();
 
 }
