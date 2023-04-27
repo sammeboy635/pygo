@@ -80,3 +80,52 @@ n: np.ndarray = np.array([1, 2, 3])
 
 ### Syntax for declaring types:
 q = p as str
+
+# All tokens possible
+
+import
+from
+class
+def
+if
+elif
+else
+while
+for
+try
+except
+finally
+with
+pass
+break
+continue
+return
+raise
+yield
+async
+await
+global
+nonlocal
+assert
+lambda
+Identifiers:
+
+Variable names (e.g., my_variable)
+Function names (e.g., my_function)
+Class names (e.g., MyClass)
+Literals:
+
+String literals (e.g., "Hello, World!", 'Hello, World!')
+Integer literals (e.g., 42, 0b101010, 0o52, 0x2a)
+Floating-point literals (e.g., 3.14, 1.2e-3)
+Complex literals (e.g., 1+2j, 3.14j)
+Boolean literals (e.g., True, False)
+None literal (e.g., None)
+Operators:
+
+Arithmetic operators (+, -, *, /, //, %, **)
+Comparison operators (==, !=, <, >, <=, >=)
+Logical operators (and, or, not)
+Bitwise operators (&, |, ^, ~, <<, >>)
+Assignment operators (=, +=, -=, *=, /=, %=, **=, //=, &=, |=, ^=, <<=, >>=)
+Keep in mind that this list is not exhaustive, as Python has many more language constructs. Also, note that comments and whitespace can precede any of these tokens. To parse Python code effectively, I recommend using an existing parsing library like python-syntax or lalrpop, which can handle these tokens and the parsing rules for you.

@@ -390,23 +390,23 @@ pub fn load_file(file_name: &str) -> String{
 	return contents;
 }
 
-fn print_tokens(tokens: &Vec<PygoToken>) {
-	println!("\n");
-    for token in tokens {
-		if let PygoToken::TAB(val) = token{
-			for i in 0..*val{
-				print!("\t");
-			}
-		}else{
-			print!("{:?} ", token);
-		}
+// pub fn print_tokens(tokens: &Vec<PygoToken>) {
+// 	println!("\n");
+//     for token in tokens {
+// 		if let PygoToken::TAB(val) = token{
+// 			for i in 0..*val{
+// 				print!("\t");
+// 			}
+// 		}else{
+// 			print!("{:?} ", token);
+// 		}
         
-        if let PygoToken::END = token {
-            println!(); // add a newline after END token
-        }
-    }
-	println!("\n");
-}
+//         if let PygoToken::END = token {
+//             println!(); // add a newline after END token
+//         }
+//     }
+// 	println!("\n");
+// }
 
 use crate::Utils::timer::Timer;
 
@@ -418,5 +418,5 @@ pub fn main2() {
 	let mut timer = Timer::new();
     let tokens = tokenizer.tokenize();
 	timer.print("Done");
-	print_tokens(&tokens);
+	//print_tokens(&tokens);
 }

@@ -7,48 +7,13 @@
 		{
 			"type": "lldb",
 			"request": "launch",
-			"name": "Launch",
-			"program": "${workspaceFolder}/target/debug/pygo",
-			"args": [],
-			"cwd": "${workspaceFolder}"
-		},
-
-		{
-			"type": "lldb",
-			"request": "launch",
-			"name": "Debug executable 'pygo'",
+			"name": "Cargo launch",
 			"cargo": {
 				"args": [
-					"build",
-					"--bin=pygo",
-					"--package=pygo"
-				],
-				"filter": {
-					"name": "pygo",
-					"kind": "bin"
-				}
+					"run",
+				]
 			},
-			"args": [],
-			"cwd": "${workspaceFolder}"
-		},
-		{
-			"type": "lldb",
-			"request": "launch",
-			"name": "Debug unit tests in executable 'pygo'",
-			"cargo": {
-				"args": [
-					"test",
-					"--no-run",
-					"--bin=pygo",
-					"--package=pygo"
-				],
-				"filter": {
-					"name": "pygo",
-					"kind": "bin"
-				}
-			},
-			"args": [],
-			"cwd": "${workspaceFolder}"
-		}
+			"args": []
+		},	
 	]
 }
