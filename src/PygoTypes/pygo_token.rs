@@ -15,9 +15,10 @@ impl Hash for Float32 {
         bits.hash(state);
     }
 }
+
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub enum PygoKeyword{
-	// Keywords
+pub enum PygoToken {
+    // Keywords
 	IMPORT,
     FROM,
     CLASS,
@@ -43,9 +44,7 @@ pub enum PygoKeyword{
     NONLOCAL,
     ASSERT,
     LAMBDA,
-}
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub enum PygoLiteral {
+
 	// Literals
     STRING_LITERAL(String),
     INTEGER_LITERAL(i32),
@@ -53,10 +52,7 @@ pub enum PygoLiteral {
     COMPLEX_LITERAL,
     BOOLEAN_LITERAL(bool),
     NONE_LITERAL,
-}
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub enum PygoOp{
 	// Operators
 	ADDITION,
 	SUBTRACTION,
@@ -97,151 +93,216 @@ pub enum PygoOp{
 	// Parenthesis
 	OPEN_PAREN,
 	CLOSED_PAREN,
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub enum PygoToken {
-    // Keywords
-	KEYWORD(PygoKeyword),
-
-	// Literals
-	LITERAL(PygoLiteral),
-
-	// Operators
-	OPERATOR(PygoOp),
     
     // Identifiers
+	VARIABLE_NAME_ASSIGNMENT_TYPE(String, String),
+	VARIABLE_NAME_ASSIGNMENT(String),
     VARIABLE_NAME(String),
+	VARIABLE_NAME_TYPE(String, String),
     FUNCTION_NAME(String),
     CLASS_NAME(String),
 	IMPORT_NAME(String),
     
 	// Format
+	COLON,
 	END,
 	TAB(i32),
 	COMMA,
-
+	
 	// Unknown
 	UNKNOWN,
 }
 
-impl PygoKeyword{
+impl PygoToken{
+
 	pub fn _is_keyword(cur_str : &str) -> Option<PygoToken>{
 		match cur_str{
-		"import" => Some(PygoToken::KEYWORD(PygoKeyword::IMPORT)),
-		"from" => Some(PygoToken::KEYWORD(PygoKeyword::FROM)),
-		"class" => Some(PygoToken::KEYWORD(PygoKeyword::CLASS)),
-		"def" => Some(PygoToken::KEYWORD(PygoKeyword::DEF)),
-		"if" => Some(PygoToken::KEYWORD(PygoKeyword::IF)),
-		"elif" => Some(PygoToken::KEYWORD(PygoKeyword::ELIF)),
-		"else" => Some(PygoToken::KEYWORD(PygoKeyword::ELSE)),
-		"while" => Some(PygoToken::KEYWORD(PygoKeyword::WHILE)),
-		"for" => Some(PygoToken::KEYWORD(PygoKeyword::FOR)),
-		"try" => Some(PygoToken::KEYWORD(PygoKeyword::TRY)),
-		"except" => Some(PygoToken::KEYWORD(PygoKeyword::EXCEPT)),
-		"finally" => Some(PygoToken::KEYWORD(PygoKeyword::FINALLY)),
-		"with" => Some(PygoToken::KEYWORD(PygoKeyword::WITH)),
-		"pass" => Some(PygoToken::KEYWORD(PygoKeyword::PASS)),
-		"break" => Some(PygoToken::KEYWORD(PygoKeyword::BREAK)),
-		"continue" => Some(PygoToken::KEYWORD(PygoKeyword::CONTINUE)),
-		"return" => Some(PygoToken::KEYWORD(PygoKeyword::RETURN)),
-		"raise" => Some(PygoToken::KEYWORD(PygoKeyword::RAISE)),
-		"yield" => Some(PygoToken::KEYWORD(PygoKeyword::YIELD)),
-		"async" => Some(PygoToken::KEYWORD(PygoKeyword::ASYNC)),
-		"await" => Some(PygoToken::KEYWORD(PygoKeyword::AWAIT)),
-		"global" => Some(PygoToken::KEYWORD(PygoKeyword::GLOBAL)),
-		"nonlocal" => Some(PygoToken::KEYWORD(PygoKeyword::NONLOCAL)),
-		"assert" => Some(PygoToken::KEYWORD(PygoKeyword::ASSERT)),
-		"lambda" => Some(PygoToken::KEYWORD(PygoKeyword::LAMBDA)),
+		"import" => Some(PygoToken::IMPORT),
+		"from" => Some(PygoToken::FROM),
+		"class" => Some(PygoToken::CLASS),
+		"def" => Some(PygoToken::DEF),
+		"if" => Some(PygoToken::IF),
+		"elif" => Some(PygoToken::ELIF),
+		"else" => Some(PygoToken::ELSE),
+		"while" => Some(PygoToken::WHILE),
+		"for" => Some(PygoToken::FOR),
+		"try" => Some(PygoToken::TRY),
+		"except" => Some(PygoToken::EXCEPT),
+		"finally" => Some(PygoToken::FINALLY),
+		"with" => Some(PygoToken::WITH),
+		"pass" => Some(PygoToken::PASS),
+		"break" => Some(PygoToken::BREAK),
+		"continue" => Some(PygoToken::CONTINUE),
+		"return" => Some(PygoToken::RETURN),
+		"raise" => Some(PygoToken::RAISE),
+		"yield" => Some(PygoToken::YIELD),
+		"async" => Some(PygoToken::ASYNC),
+		"await" => Some(PygoToken::AWAIT),
+		"global" => Some(PygoToken::GLOBAL),
+		"nonlocal" => Some(PygoToken::NONLOCAL),
+		"assert" => Some(PygoToken::ASSERT),
+		"lambda" => Some(PygoToken::LAMBDA),
 		_ => None,
 		}
 	}
-}
-impl PygoLiteral {
+
 	pub fn _is_literal(cur_str : &str) -> Option<PygoToken>{
 		match cur_str {
-			"True" => Some(PygoToken::LITERAL(PygoLiteral::BOOLEAN_LITERAL(true))),
-			"False" => Some(PygoToken::LITERAL(PygoLiteral::BOOLEAN_LITERAL(false))),
-			"None" => Some(PygoToken::LITERAL(PygoLiteral::NONE_LITERAL)),
+			"True" => Some(PygoToken::BOOLEAN_LITERAL(true)),
+			"False" => Some(PygoToken::BOOLEAN_LITERAL(false)),
+			"None" => Some(PygoToken::NONE_LITERAL),
 			_ => None,
 		}
 	}
-}
-impl PygoOp{
 	pub fn _is_op(cur_str : &str) -> Option<PygoToken>{
 		match cur_str {
-			"+" => Some(PygoToken::OPERATOR(PygoOp::ADDITION)),
-			"-" => Some(PygoToken::OPERATOR(PygoOp::SUBTRACTION)),
-			"*" => Some(PygoToken::OPERATOR(PygoOp::MULTIPLICATION)),
-			"/" => Some(PygoToken::OPERATOR(PygoOp::DIVISION)),
-			"//" => Some(PygoToken::OPERATOR(PygoOp::FLOOR_DIVISION)),
-			"%" => Some(PygoToken::OPERATOR(PygoOp::MODULO)),
-			"**" => Some(PygoToken::OPERATOR(PygoOp::EXPONENT)),
-			"==" => Some(PygoToken::OPERATOR(PygoOp::EQUALITY)),
-			"!=" => Some(PygoToken::OPERATOR(PygoOp::INEQUALITY)),
-			"<" => Some(PygoToken::OPERATOR(PygoOp::LESS_THAN)),
-			">" => Some(PygoToken::OPERATOR(PygoOp::GREATER_THAN)),
-			"<=" => Some(PygoToken::OPERATOR(PygoOp::LESS_THAN_OR_EQUAL_TO)),
-			">=" => Some(PygoToken::OPERATOR(PygoOp::GREATER_THAN_OR_EQUAL_TO)),
-			"and" => Some(PygoToken::OPERATOR(PygoOp::LOGICAL_AND)),
-			"or" => Some(PygoToken::OPERATOR(PygoOp::LOGICAL_OR)),
-			"not" => Some(PygoToken::OPERATOR(PygoOp::LOGICAL_NOT)),
-			"&" => Some(PygoToken::OPERATOR(PygoOp::BITWISE_AND)),
-			"|" => Some(PygoToken::OPERATOR(PygoOp::BITWISE_OR)),
-			"^" => Some(PygoToken::OPERATOR(PygoOp::BITWISE_XOR)),
-			"~" => Some(PygoToken::OPERATOR(PygoOp::BITWISE_NOT)),
-			"<<" => Some(PygoToken::OPERATOR(PygoOp::LEFT_SHIFT)),
-			">>" => Some(PygoToken::OPERATOR(PygoOp::RIGHT_SHIFT)),
-			"=" => Some(PygoToken::OPERATOR(PygoOp::ASSIGNMENT)),
-			"+=" => Some(PygoToken::OPERATOR(PygoOp::ADDITION_ASSIGNMENT)),
-			"-=" => Some(PygoToken::OPERATOR(PygoOp::SUBTRACTION_ASSIGNMENT)),
-			"*=" => Some(PygoToken::OPERATOR(PygoOp::MULTIPLICATION_ASSIGNMENT)),
-			"/=" => Some(PygoToken::OPERATOR(PygoOp::DIVISION_ASSIGNMENT)),
-			"//=" => Some(PygoToken::OPERATOR(PygoOp::FLOOR_DIVISION_ASSIGNMENT)),
-			"%=" => Some(PygoToken::OPERATOR(PygoOp::MODULO_ASSIGNMENT)),
-			"**=" => Some(PygoToken::OPERATOR(PygoOp::EXPONENTIATION_ASSIGNMENT)),
-			"&=" => Some(PygoToken::OPERATOR(PygoOp::BITWISE_AND_ASSIGNMENT)),
-			"|=" => Some(PygoToken::OPERATOR(PygoOp::BITWISE_OR_ASSIGNMENT)),
-			"^=" => Some(PygoToken::OPERATOR(PygoOp::BITWISE_XOR_ASSIGNMENT)),
-			"<<=" => Some(PygoToken::OPERATOR(PygoOp::LEFT_SHIFT_ASSIGNMENT)),
-			">>=" => Some(PygoToken::OPERATOR(PygoOp::RIGHT_SHIFT_ASSIGNMENT)),
+			"+" => Some(PygoToken::ADDITION),
+			"-" => Some(PygoToken::SUBTRACTION),
+			"*" => Some(PygoToken::MULTIPLICATION),
+			"/" => Some(PygoToken::DIVISION),
+			"//" => Some(PygoToken::FLOOR_DIVISION),
+			"%" => Some(PygoToken::MODULO),
+			"**" => Some(PygoToken::EXPONENT),
+			"==" => Some(PygoToken::EQUALITY),
+			"!=" => Some(PygoToken::INEQUALITY),
+			"<" => Some(PygoToken::LESS_THAN),
+			">" => Some(PygoToken::GREATER_THAN),
+			"<=" => Some(PygoToken::LESS_THAN_OR_EQUAL_TO),
+			">=" => Some(PygoToken::GREATER_THAN_OR_EQUAL_TO),
+			"and" => Some(PygoToken::LOGICAL_AND),
+			"or" => Some(PygoToken::LOGICAL_OR),
+			"not" => Some(PygoToken::LOGICAL_NOT),
+			"&" => Some(PygoToken::BITWISE_AND),
+			"|" => Some(PygoToken::BITWISE_OR),
+			"^" => Some(PygoToken::BITWISE_XOR),
+			"~" => Some(PygoToken::BITWISE_NOT),
+			"<<" => Some(PygoToken::LEFT_SHIFT),
+			">>" => Some(PygoToken::RIGHT_SHIFT),
+			"=" => Some(PygoToken::ASSIGNMENT),
+			"+=" => Some(PygoToken::ADDITION_ASSIGNMENT),
+			"-=" => Some(PygoToken::SUBTRACTION_ASSIGNMENT),
+			"*=" => Some(PygoToken::MULTIPLICATION_ASSIGNMENT),
+			"/=" => Some(PygoToken::DIVISION_ASSIGNMENT),
+			"//=" => Some(PygoToken::FLOOR_DIVISION_ASSIGNMENT),
+			"%=" => Some(PygoToken::MODULO_ASSIGNMENT),
+			"**=" => Some(PygoToken::EXPONENTIATION_ASSIGNMENT),
+			"&=" => Some(PygoToken::BITWISE_AND_ASSIGNMENT),
+			"|=" => Some(PygoToken::BITWISE_OR_ASSIGNMENT),
+			"^=" => Some(PygoToken::BITWISE_XOR_ASSIGNMENT),
+			"<<=" => Some(PygoToken::LEFT_SHIFT_ASSIGNMENT),
+			">>=" => Some(PygoToken::RIGHT_SHIFT_ASSIGNMENT),
 			_ => None,
 		}
 	}
-	pub fn _precedence(&self) -> Option<usize> {
-        match self {
-            PygoOp::ADDITION | PygoOp::SUBTRACTION => Some(1),
-            PygoOp::MULTIPLICATION | PygoOp::DIVISION | PygoOp::MODULO => Some(2),
-            PygoOp::FLOOR_DIVISION => Some(3),
-            PygoOp::EXPONENT => Some(4),
-            PygoOp::EQUALITY | PygoOp::INEQUALITY | PygoOp::LESS_THAN |
-                PygoOp::GREATER_THAN | PygoOp::LESS_THAN_OR_EQUAL_TO | PygoOp::GREATER_THAN_OR_EQUAL_TO => Some(5),
-            PygoOp::LOGICAL_AND => Some(6),
-            PygoOp::LOGICAL_OR => Some(7),
-            PygoOp::LOGICAL_NOT => Some(8),
-            PygoOp::BITWISE_AND => Some(9),
-            PygoOp::BITWISE_OR => Some(10),
-            PygoOp::BITWISE_XOR => Some(11),
-            PygoOp::BITWISE_NOT => Some(12),
-            PygoOp::LEFT_SHIFT | PygoOp::RIGHT_SHIFT => Some(13),
-            PygoOp::ASSIGNMENT | PygoOp::ADDITION_ASSIGNMENT | PygoOp::SUBTRACTION_ASSIGNMENT |
-                PygoOp::MULTIPLICATION_ASSIGNMENT | PygoOp::DIVISION_ASSIGNMENT | PygoOp::FLOOR_DIVISION_ASSIGNMENT |
-                PygoOp::MODULO_ASSIGNMENT | PygoOp::EXPONENTIATION_ASSIGNMENT | PygoOp::BITWISE_AND_ASSIGNMENT |
-                PygoOp::BITWISE_OR_ASSIGNMENT | PygoOp::BITWISE_XOR_ASSIGNMENT | PygoOp::LEFT_SHIFT_ASSIGNMENT |
-                PygoOp::RIGHT_SHIFT_ASSIGNMENT => Some(14),
-            _ => None,
-        }
-    }
-}
 
-impl PygoToken{
-	pub fn _is_keyword(cur_str: &str) -> Option<PygoToken>{
-		PygoKeyword::_is_keyword(cur_str)
+	pub fn precedence(&self) -> Option<usize> {
+		match self {
+			PygoToken::VARIABLE_NAME_ASSIGNMENT_TYPE(..) | PygoToken::VARIABLE_NAME_ASSIGNMENT(..) => Some(0),
+			PygoToken::ASSIGNMENT | PygoToken::ADDITION_ASSIGNMENT | PygoToken::SUBTRACTION_ASSIGNMENT |
+				PygoToken::MULTIPLICATION_ASSIGNMENT | PygoToken::DIVISION_ASSIGNMENT | PygoToken::FLOOR_DIVISION_ASSIGNMENT |
+				PygoToken::MODULO_ASSIGNMENT | PygoToken::EXPONENTIATION_ASSIGNMENT | PygoToken::BITWISE_AND_ASSIGNMENT |
+				PygoToken::BITWISE_OR_ASSIGNMENT | PygoToken::BITWISE_XOR_ASSIGNMENT | PygoToken::LEFT_SHIFT_ASSIGNMENT |
+				PygoToken::RIGHT_SHIFT_ASSIGNMENT => Some(1),
+			PygoToken::ADDITION | PygoToken::SUBTRACTION => Some(2),
+			PygoToken::MULTIPLICATION | PygoToken::DIVISION | PygoToken::MODULO => Some(3),
+			PygoToken::FLOOR_DIVISION => Some(4),
+			PygoToken::EXPONENT => Some(5),
+			PygoToken::EQUALITY | PygoToken::INEQUALITY | PygoToken::LESS_THAN |
+				PygoToken::GREATER_THAN | PygoToken::LESS_THAN_OR_EQUAL_TO | PygoToken::GREATER_THAN_OR_EQUAL_TO => Some(6),
+			PygoToken::LOGICAL_AND => Some(7),
+			PygoToken::LOGICAL_OR => Some(8),
+			PygoToken::LOGICAL_NOT => Some(9),
+			PygoToken::BITWISE_AND => Some(10),
+			PygoToken::BITWISE_OR => Some(11),
+			PygoToken::BITWISE_XOR => Some(12),
+			PygoToken::BITWISE_NOT => Some(13),
+			PygoToken::LEFT_SHIFT | PygoToken::RIGHT_SHIFT => Some(14),
+			_ => None,
+		}
 	}
-	pub fn _is_literal(cur_str: &str) -> Option<PygoToken>{
-		PygoLiteral::_is_literal(cur_str)
+	pub fn is_keyword(&self) -> bool{
+		match self{
+			PygoToken::IMPORT => true,
+			PygoToken::FROM => true,
+			PygoToken::CLASS => true,
+			PygoToken::DEF => true,
+			PygoToken::IF => true,
+			PygoToken::ELIF => true,
+			PygoToken::ELSE => true,
+			PygoToken::WHILE => true,
+			PygoToken::FOR => true,
+			PygoToken::TRY => true,
+			PygoToken::EXCEPT => true,
+			PygoToken::FINALLY => true,
+			PygoToken::WITH => true,
+			PygoToken::PASS => true,
+			PygoToken::BREAK => true,
+			PygoToken::CONTINUE => true,
+			PygoToken::RETURN => true,
+			PygoToken::RAISE => true,
+			PygoToken::YIELD => true,
+			PygoToken::ASYNC => true,
+			PygoToken::AWAIT => true,
+			PygoToken::GLOBAL => true,
+			PygoToken::NONLOCAL => true,
+			PygoToken::ASSERT => true,
+			PygoToken::LAMBDA => true,
+		_ => false,
+		}
 	}
-	pub fn _is_op(cur_str: &str) -> Option<PygoToken>{
-		PygoOp::_is_op(cur_str)
+	pub fn is_op(&self) -> bool{
+		match self {
+			PygoToken::ADDITION => true,
+			PygoToken::SUBTRACTION => true,
+			PygoToken::MULTIPLICATION => true,
+			PygoToken::DIVISION => true,
+			PygoToken::FLOOR_DIVISION => true,
+			PygoToken::MODULO => true,
+			PygoToken::EXPONENT => true,
+			PygoToken::EQUALITY => true,
+			PygoToken::INEQUALITY => true,
+			PygoToken::LESS_THAN => true,
+			PygoToken::GREATER_THAN => true,
+			PygoToken::LESS_THAN_OR_EQUAL_TO => true,
+			PygoToken::GREATER_THAN_OR_EQUAL_TO => true,
+			PygoToken::LOGICAL_AND => true,
+			PygoToken::LOGICAL_OR => true,
+			PygoToken::LOGICAL_NOT => true,
+			PygoToken::BITWISE_AND => true,
+			PygoToken::BITWISE_OR => true,
+			PygoToken::BITWISE_XOR => true,
+			PygoToken::BITWISE_NOT => true,
+			PygoToken::LEFT_SHIFT => true,
+			PygoToken::RIGHT_SHIFT => true,
+			PygoToken::ASSIGNMENT => true,
+			PygoToken::ADDITION_ASSIGNMENT => true,
+			PygoToken::SUBTRACTION_ASSIGNMENT => true,
+			PygoToken::MULTIPLICATION_ASSIGNMENT => true,
+			PygoToken::DIVISION_ASSIGNMENT => true,
+			PygoToken::FLOOR_DIVISION_ASSIGNMENT => true,
+			PygoToken::MODULO_ASSIGNMENT => true,
+			PygoToken::EXPONENTIATION_ASSIGNMENT => true,
+			PygoToken::BITWISE_AND_ASSIGNMENT => true,
+			PygoToken::BITWISE_OR_ASSIGNMENT => true,
+			PygoToken::BITWISE_XOR_ASSIGNMENT => true,
+			PygoToken::LEFT_SHIFT_ASSIGNMENT => true,
+			PygoToken::RIGHT_SHIFT_ASSIGNMENT => true,
+			_ => false,
+		}
+	}
+	pub fn is_literal(&self) -> bool{
+		match self {
+			PygoToken::BOOLEAN_LITERAL(..) => true,
+			PygoToken::BOOLEAN_LITERAL(..) => true,
+			PygoToken::NONE_LITERAL => true,
+			_ => false,
+		}
+	}
+	pub fn is_var(&self) -> bool{
+		match self {
+			PygoToken::VARIABLE_NAME_ASSIGNMENT(..) => true,
+			PygoToken::VARIABLE_NAME_ASSIGNMENT_TYPE(..) => true,
+			_ => false,
+		}
 	}
 }

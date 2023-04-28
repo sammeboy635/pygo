@@ -2,6 +2,7 @@ use std::ops;
 #[derive(Debug, Clone)]
 pub enum Type {
 	Void,
+	Bool(bool),
     Int(i64),
     Float(f64),
     Double(f64),

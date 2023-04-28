@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use crate::PygoTypes::pygo_instruction::Instruction;
 
+use super::pygo_type::Type;
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum VariableType {
     Local,
@@ -25,11 +27,11 @@ pub struct Class {
     pub name: String,
     // Add any additional information about the class, such as its methods, properties, and inheritance
 }
-
+#[derive(Debug, Clone)]
 pub struct Context {
     imports: HashSet<String>,
     classes: HashMap<String, Class>,
-    variables: HashMap<String, Variable>,
+    pub variables: HashMap<String, Type>,
     functions: HashMap<String, Function>,
 	pub instruction: Vec<Instruction>,
 }
@@ -53,8 +55,8 @@ impl Context {
         self.classes.insert(class.name.clone(), class);
     }
 
-    pub fn add_variable(&mut self, variable: Variable) {
-        self.variables.insert(variable.name.clone(), variable);
+    pub fn add_variable(&mut self, variable: String, val : Type) {
+        self.variables.insert(variable, val);
     }
 
     pub fn add_function(&mut self, function: Function) {
@@ -69,7 +71,7 @@ impl Context {
         self.classes.get(name)
     }
 
-    pub fn find_variable(&self, name: &str) -> Option<&Variable> {
+    pub fn find_variable(&self, name: &str) -> Option<&Type> {
         self.variables.get(name)
     }
 

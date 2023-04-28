@@ -44,11 +44,11 @@ impl<'a> Tokenizer<'a> {
 				'#' => self.skip_comment(),
 				'(' => {
 					self.input.next();
-					tokens.push(OPERATOR(PygoOp::OPEN_PAREN));
+					tokens.push(PygoToken::OPEN_PAREN);
 				},
 				')' => {
 					self.input.next();
-					tokens.push(OPERATOR(PygoOp::CLOSED_PAREN));
+					tokens.push(PygoToken::CLOSED_PAREN);
 				},
 				',' => {
 					self.input.next();
@@ -93,9 +93,9 @@ impl<'a> Tokenizer<'a> {
         } else {
 			// In a complete tokenizer, you should differentiate between
             // VARIABLE_NAME, FUNCTION_NAME, and CLASS_NAME based on context
-			if *last_token.unwrap_or(&PygoToken::UNKNOWN) == KEYWORD(PygoKeyword::IMPORT) {
+			if *last_token.unwrap_or(&PygoToken::UNKNOWN) == PygoToken::IMPORT {
 				return Some(PygoToken::IMPORT_NAME(identifier));
-			}else if *last_token.unwrap_or(&PygoToken::UNKNOWN) == KEYWORD(PygoKeyword::CLASS) {
+			}else if *last_token.unwrap_or(&PygoToken::UNKNOWN) == PygoToken::CLASS {
 				return Some(PygoToken::CLASS_NAME(identifier));
 			}
             
@@ -112,7 +112,36 @@ impl<'a> Tokenizer<'a> {
 			if next_char == '(' {
 				Some(PygoToken::FUNCTION_NAME(identifier))
 			} else {
-				Some(PygoToken::VARIABLE_NAME(identifier))
+				// HANDLE VARIABLES
+				let ident_type = self.parse_variable_type();
+
+				// Check for assignment operator
+				let mut is_assignment = false;
+				let mut temp_input = self.input.clone();
+				while let Some(&c) = temp_input.peek() {
+					if c.is_whitespace() {
+						temp_input.next();
+					} else {
+						if c == '=' {
+							is_assignment = true;
+						}
+						break;
+					}
+				}
+		
+				if is_assignment {
+					if let Some(ident_type) = ident_type {
+						Some(PygoToken::VARIABLE_NAME_ASSIGNMENT_TYPE(identifier, ident_type))
+					} else {
+						Some(PygoToken::VARIABLE_NAME_ASSIGNMENT(identifier))
+					}
+				} else {
+					if let Some(ident_type) = ident_type {
+						Some(PygoToken::VARIABLE_NAME_TYPE(identifier, ident_type))
+					} else {
+						Some(PygoToken::VARIABLE_NAME(identifier))
+					}
+				}
 			}
         }
     }
@@ -164,7 +193,7 @@ impl<'a> Tokenizer<'a> {
             }
         }
 
-        Some(LITERAL(PygoLiteral::STRING_LITERAL(string_literal)))
+        Some(PygoToken::STRING_LITERAL(string_literal))
     }
 
     fn parse_number_literal(&mut self) -> Option<PygoToken> {
@@ -182,13 +211,51 @@ impl<'a> Tokenizer<'a> {
         }
 
         if let Ok(val) = number_literal.parse::<f32>() {
-            Some(LITERAL(PygoLiteral::FLOATING_POINT_LITERAL(Float32(val))))
+            Some(PygoToken::FLOATING_POINT_LITERAL(Float32(val)))
         } else if let Ok(val) = number_literal.parse::<i32>(){
-            Some(LITERAL(PygoLiteral::INTEGER_LITERAL(val)))
+            Some(PygoToken::INTEGER_LITERAL(val))
         }else{
-			Some(LITERAL(PygoLiteral::NONE_LITERAL))
+			Some(PygoToken::NONE_LITERAL)
 		}
     }
+	fn parse_variable_type(&mut self) -> Option<String> {
+		let mut found_colon = false;
+	
+		// Skip any whitespaces and newlines before the colon
+		while let Some(&c) = self.input.peek() {
+			if c == ' ' {
+				self.input.next();
+			} else if c == ':' {
+				self.input.next();
+				found_colon = true;
+				break;
+			} else {
+				break;
+			}
+		}
+	
+		if found_colon {
+			let mut variable_type = String::new();
+	
+			// Parse the type (only alphabetic characters, digits, and underscores are allowed)
+			while let Some(&c) = self.input.peek() {
+				if c == ' '{
+					self.input.next();
+				}else if c.is_alphabetic() || c == '_' || (!variable_type.is_empty() && c.is_digit(10)) {
+					variable_type.push(c);
+					self.input.next();
+				} else {
+					break;
+				}
+			}
+	
+			if !variable_type.is_empty() {
+				return Some(variable_type);
+			}
+		}
+	
+		None
+	}
 	fn parse_handle_endline_checks(&mut self) -> Option<PygoToken>{
 		self.input.next();
 		let mut current_indentation = 0;

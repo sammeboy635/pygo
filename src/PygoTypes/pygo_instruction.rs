@@ -1,7 +1,7 @@
 use crate::PygoTypes::pygo_type::Type;
 use crate::PygoTypes::pygo_function::Function;
 
-#[derive()]
+#[derive(Clone)]
 pub enum Instruction {
     Add,
 	Sub,

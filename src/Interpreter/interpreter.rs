@@ -1,3 +1,4 @@
+use crate::PygoTypes::pygo_context::Context;
 use crate::PygoTypes::pygo_type::Type;
 use crate::PygoTypes::pygo_function::Function;
 use crate::PygoTypes::pygo_instruction::{Instruction, Instruction::*};
@@ -25,22 +26,22 @@ impl<'a> Interpret<'a>{
 			index: 0,
         }
     }
-	pub fn interpret(&mut self, variables: &mut HashMap<String, Type>) -> Type{
+	pub fn interpret(&mut self, context: &mut Context) -> Type{
 		while let Some(instruction) = self.code.pop_front(){
 			match instruction {
 				Add | Sub | Mul | Div | Exp | Modulo => self.operations(&instruction),
 				Call(_, args, func) => {func.call(args.clone());},
 				CustomCall(func,_,_) =>  {
 					let new_code = self.functions.get(&func).unwrap();
-					self.interpret(variables);
+					self.interpret(context);
 				},
-				Load(name, _) => self.stack.push(variables.get(&name).unwrap().clone()),
+				Load(name, _) => self.stack.push(context.variables.get(&name).unwrap().clone()),
 				Push(val) => self.stack.push(val.clone()),
 				SetVar(name, _) => {
 					let test = name.clone();
-					let vall = self.interpret(variables);
+					let vall = self.interpret(context);
 					println!("{:?}, {:?}",test,vall);
-					variables.insert(test, vall);
+					context.variables.insert(test, vall);
 				},
 				End => return self.stack.pop().unwrap(),
 				_ => todo!(),

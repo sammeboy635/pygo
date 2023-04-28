@@ -1,2 +1,4 @@
-test = 0
+# Testing Assignment
+
+test : int = 0
 tes = True
