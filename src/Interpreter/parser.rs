@@ -26,21 +26,26 @@ impl<'a> PygoParser<'a> {
 	pub fn parse(&mut self,context: &mut Context){
 		while let Some(token) = self.tokens.next() {
 		//println!("{:?}", context.instruction);
-			match token {
-				ASSIGNMENT => (),
-				VARIABLE_NAME(var_name) => context.instruction.push(self.variable(&var_name)),
-				VARIABLE_NAME_TYPE(var_name, var_type) => context.instruction.push(self.variable_type(var_name, var_type)),
-				VARIABLE_NAME_ASSIGNMENT(var_name) => (),//Instruction::SetVar_Typed(Type::String(value.to_owned()),),
-				VARIABLE_NAME_ASSIGNMENT_TYPE(var_name, var_type) => (),
-				STRING_LITERAL(value) => context.instruction.push(Instruction::Push(Type::String(value.to_owned()))),
-				INTEGER_LITERAL(value) => context.instruction.push(Instruction::Push(Type::Int(*value as i64))),
-				FLOATING_POINT_LITERAL(value) => context.instruction.push(Instruction::Push(Type::Float(value.0 as f64))),
-				BOOLEAN_LITERAL(value) => context.instruction.push(Instruction::Push(Type::Bool(*value))),
-				NONE_LITERAL => (),
-				_ if token.is_keyword() => (),
+			let instruction = match token {
+				ASSIGNMENT => None,
+				VARIABLE_NAME(var_name) => Some(Instruction::Load(var_name.to_owned(), Type::Unknown)),
+				VARIABLE_NAME_TYPE(var_name, var_type) => Some(self.variable_type(var_name, var_type)),
+				VARIABLE_NAME_ASSIGNMENT(var_name) => Some(Instruction::SetVar(var_name.to_owned(), Type::Unknown)),
+				VARIABLE_NAME_ASSIGNMENT_TYPE(var_name, var_type) => Some(self.variable_type(var_name, var_type)),
+				STRING_LITERAL(value) => Some(Instruction::Push(Type::String(value.to_owned()))),
+				INTEGER_LITERAL(value) => Some(Instruction::Push(Type::Int(*value as i64))),
+				FLOATING_POINT_LITERAL(value) => Some(Instruction::Push(Type::Float(value.0 as f64))),
+				BOOLEAN_LITERAL(value) => Some(Instruction::Push(Type::Bool(*value))),
+				NONE_LITERAL => None,
+				END => Some(Instruction::End),
+				_ if token.is_keyword() => None,
 				_ if token.is_op() => self.operator(&token, context),
-				_ if token.is_literal() => (),
-				_ => println!("other: {:?}", token),
+				_ if token.is_literal() => None,
+				_ => {//println!("other: {:?}", token); 
+				None},
+			};
+			if let Some(cur_instruction) = instruction{
+				context.instruction.push(cur_instruction);
 			}
 		}
 		
@@ -94,21 +99,20 @@ impl<'a> PygoParser<'a> {
 		Some(output)
 	}
 
-	pub fn operator(&self, operator: &PygoToken, context: &mut Context){
-		println!("op: {:?}", operator);
+	pub fn operator(&self, operator: &PygoToken, context: &mut Context)-> Option<Instruction>{
+		//println!("op: {:?}", operator);
 		match operator {
-			PygoToken::ADDITION => context.instruction.push(Instruction::Add),
-			PygoToken::SUBTRACTION => context.instruction.push(Instruction::Sub),
-			PygoToken::MULTIPLICATION => context.instruction.push(Instruction::Mul),
-			PygoToken::DIVISION => context.instruction.push(Instruction::Div),
-			PygoToken::MODULO => context.instruction.push(Instruction::Modulo),
-			PygoToken::EXPONENT => context.instruction.push(Instruction::Exp),
-			_ => (),
-			
+			PygoToken::ADDITION => Some(Instruction::Add),
+			PygoToken::SUBTRACTION => Some(Instruction::Sub),
+			PygoToken::MULTIPLICATION => Some(Instruction::Mul),
+			PygoToken::DIVISION => Some(Instruction::Div),
+			PygoToken::MODULO => Some(Instruction::Modulo),
+			PygoToken::EXPONENT => Some(Instruction::Exp),
+			_ => None,	
 		}
 	}
 	pub fn literal(&self, literal: &PygoToken, context: &mut Context){
-		println!("lit: {:?}", literal);
+		//println!("lit: {:?}", literal);
 		match literal {
 			PygoToken::INTEGER_LITERAL(val) => (),
 			PygoToken::FLOATING_POINT_LITERAL(val) => (),
@@ -117,11 +121,11 @@ impl<'a> PygoParser<'a> {
 		}
 	}
 	pub fn variable(&self, var_name: &String)-> Instruction {
-		println!("var_name: {:?}", var_name);
+		//println!("var_name: {:?}", var_name);
 		return Instruction::SetVar(var_name.to_owned(), Type::Unknown);
 	}
 	pub fn variable_type(&self, var_name: &String, var_type: &String) -> Instruction{
-		println!("var_name{:?}, type {:?}",var_name,var_type);
+		//println!("var_name{:?}, type {:?}",var_name,var_type);
 		let _type = match var_type.as_str() { // Change this to be not hard codded maybe change type to have option
 			"int" => Type::Int(0),
 			"float" => Type::Float(0.0),

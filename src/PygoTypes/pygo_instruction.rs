@@ -16,7 +16,7 @@ pub enum Instruction {
 	Push(Type),
 	SetVar(String, Type),
 	SetVar_Typed(String, Type),
-	CustomCall(String, Vec<Instruction>, Vec<Instruction>)
+	CustomCall(String, Vec<Instruction>, Vec<Instruction>),
 }
 
 use std::fmt;

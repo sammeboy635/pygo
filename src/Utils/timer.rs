@@ -1,31 +1,35 @@
-use std::collections::HashMap;
-use std::time::{Instant};
+use std::time::{Instant, Duration};
 
 pub struct Timer {
     start_time: Instant,
-    end_times: HashMap<String, Instant>,
+    buffer: String,
 }
 
 impl Timer {
     pub fn new() -> Self {
         Timer {
             start_time: Instant::now(),
-            end_times: HashMap::new(),
+            buffer: String::new(),
         }
     }
 
-    pub fn end_us(&mut self, key: &str) {
-        self.end_times.insert(key.to_owned(), Instant::now());
+	pub fn new_start(&mut self) {
+        self.start_time = Instant::now();
+		self.buffer.push_str("New_Start Time ||");
     }
-
-    pub fn print(&self, message: &str) {
+    pub fn elapse(&mut self, message: &str) {
         let elapsed = self.start_time.elapsed();
-        print!("{}: {} microseconds ||", message, elapsed.as_micros());
+        self.buffer.push_str(&format!("{}: {} microseconds ||", message, elapsed.as_micros()));
+        self.start_time = Instant::now();
+    }
 
-        for (key, value) in &self.end_times {
-            let elapsed = value.duration_since(self.start_time);
-            print!(" {}: {} microseconds ||", key, elapsed.as_micros());
-        }
-		println!("");
+	pub fn elapse_nano(&mut self, message: &str) {
+        let elapsed = self.start_time.elapsed();
+        self.buffer.push_str(&format!("{}: {} nanoseconds ||", message, elapsed.as_nanos()));
+        self.start_time = Instant::now();
+    }
+
+    pub fn print(&self) {
+        println!("{}", self.buffer);
     }
 }

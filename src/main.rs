@@ -22,6 +22,7 @@ use std::time::{Instant};
 use std::collections::HashMap;
 use PygoTypes::pygo_instruction::Instruction;
 use evalexpr::*;
+use nom::Parser;
 use std::cell::RefCell;
 
 use std::collections::VecDeque;
@@ -104,34 +105,35 @@ fn main() {
 	let binding = load_file("tmp/assignment/test_2.py");
     let code = binding.as_str();
 
-    let mut tokenizer = Tokenizer::new(code);
 	let mut timer = Timer::new();
+    let mut tokenizer = Tokenizer::new(code);
     let tokens = tokenizer.tokenize();
-	timer.end_us("Tokenizer");
+	timer.elapse("Tokenizer");
 
 	
 	
 	//print_tokens(&tokens);
 	let mut tok = tokens.iter().peekable();
-	timer.end_us("before preparser");
-	let mut new_token = pre_parser(&mut tok);
-	timer.end_us("post preparser");
-	print_tokens(&new_token.unwrap());
-	//timer.end_us("Print Tokens");
-	// let mut parser = PygoParser::new(&tokens);
-	
-	// parser.parse(&mut data.borrow_mut());
-	
-	// timer.end_us("Parser");
-	
+	let mut new_token = pre_parser(&mut tok).unwrap();
+	timer.elapse("Preparser");
+	print_tokens(&tokens);
+	print_tokens(&new_token);
 
-	// let mut deque = VecDeque::new();
-	// deque.extend(data.borrow().instruction.clone());
-	// let mut interp = Interpret::new(&mut deque);
-	// let out = interp.interpret(&mut data.borrow_mut());
-	timer.print("Interpret");
+	timer.new_start();
+	let mut parser = PygoParser::new(&new_token);
+	parser.parse(&mut data.borrow_mut());
+	timer.elapse("Parser");
+
+	println!("\n{:?}\n", data.borrow().instruction);
 
 
+	timer.new_start();
+	let mut interpreter = Interpret::new();
+	interpreter.interpret(&mut data.borrow_mut());
+	timer.elapse("Interpreter");
+
+	println!("\n{:?}\n", data.borrow().variables);
+	timer.print();
 }
 /* The evaluate function takes a string input and a mutable reference to a hashmap of context variables.
  	It first initializes a standard library and a timer, 

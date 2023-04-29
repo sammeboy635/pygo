@@ -330,6 +330,5 @@ pub fn main2() {
     let mut tokenizer = Tokenizer::new(code);
 	let mut timer = Timer::new();
     let tokens = tokenizer.tokenize();
-	timer.print("Done");
 	print_tokens(&tokens);
 }
