@@ -296,21 +296,22 @@ pub fn load_file(file_name: &str) -> String{
 }
 
 pub fn print_tokens(tokens: &Vec<PygoToken>) {
-	println!("\n");
+    let mut output_buffer = String::new();
+    output_buffer.push_str("\n");
     for token in tokens {
-		if let PygoToken::TAB(val) = token{
-			for i in 0..*val{
-				print!("\t");
-			}
-		}else{
-			print!("{:?} ", token);
-		}
-        
+        if let PygoToken::TAB(val) = token {
+            for _ in 0..*val {
+                output_buffer.push('\t');
+            }
+        } else {
+            output_buffer.push_str(&format!("{:?} ", token));
+        }
         if let PygoToken::END = token {
-            println!(); // add a newline after END token
+            output_buffer.push('\n');
         }
     }
-	println!("\n");
+    output_buffer.push_str("\n");
+    print!("{}", output_buffer);
 }
 
 impl PygoToken {

@@ -15,6 +15,7 @@ pub enum Instruction {
     Load(String, Type),
 	Push(Type),
 	SetVar(String, Type),
+	SetVar_Typed(String, Type),
 	CustomCall(String, Vec<Instruction>, Vec<Instruction>)
 }
 
@@ -35,7 +36,8 @@ impl fmt::Debug for Instruction {
             Instruction::Load(name, val) => write!(f, "Load({}, {:?})", name, val),
             Instruction::Push(val) => write!(f, "Push({:?})", val),
             Instruction::SetVar(name, val) => write!(f, "SetVar({}, {:?})", name, val),
-			Instruction::CustomCall(name, instruction,_) => write!(f, "CustomCall({:?}, {:?})", name, instruction)
-        }
+			Instruction::CustomCall(name, instruction,_) => write!(f, "CustomCall({:?}, {:?})", name, instruction),
+			_ => panic!(),
+		}
     }
 }

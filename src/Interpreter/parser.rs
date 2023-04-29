@@ -30,6 +30,8 @@ impl<'a> PygoParser<'a> {
 				ASSIGNMENT => (),
 				VARIABLE_NAME(var_name) => context.instruction.push(self.variable(&var_name)),
 				VARIABLE_NAME_TYPE(var_name, var_type) => context.instruction.push(self.variable_type(var_name, var_type)),
+				VARIABLE_NAME_ASSIGNMENT(var_name) => (),//Instruction::SetVar_Typed(Type::String(value.to_owned()),),
+				VARIABLE_NAME_ASSIGNMENT_TYPE(var_name, var_type) => (),
 				STRING_LITERAL(value) => context.instruction.push(Instruction::Push(Type::String(value.to_owned()))),
 				INTEGER_LITERAL(value) => context.instruction.push(Instruction::Push(Type::Int(*value as i64))),
 				FLOATING_POINT_LITERAL(value) => context.instruction.push(Instruction::Push(Type::Float(value.0 as f64))),

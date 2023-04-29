@@ -30,71 +30,7 @@ use std::iter::Peekable;
 use std::slice::Iter;
 use crate::PygoTypes::pygo_token::{*,PygoToken::*};
 
-// fn to_postfix<'a>(tokens :&mut Peekable<Iter<'a, PygoToken>>) -> Option<Vec<PygoToken>> {
-//     let mut output: Vec<PygoToken> = Vec::new();
-//     let mut operators: Vec<PygoToken> = Vec::new();
-//     let mut func_paren_count: usize = 0;
-
-//     while let Some(token) = tokens.next() {
-//         match token {
-//             FUNCTION_NAME(_) => {
-//                 output.push(token.clone());
-//                 func_paren_count += 1;
-//             }
-//             OPEN_PAREN => {
-//                 if func_paren_count > 0 {
-//                     func_paren_count -= 1;
-//                     output.push(token.clone());
-//                 } else {
-//                     operators.push(token.clone());
-//                 }
-//             }
-//             CLOSED_PAREN | COMMA => {
-//                 while let Some(top_op) = operators.pop() {
-//                     if let OPEN_PAREN = top_op {
-//                         break;
-//                     }
-//                     output.push(top_op);
-//                 }
-//                 if *token == CLOSED_PAREN && func_paren_count > 0 {
-//                     output.push(token.clone());
-//                     func_paren_count += 1;
-//                 } else if *token == COMMA {
-//                     output.push(token.clone());
-//                 }
-//             }
-//             END => {
-//                 break;
-//             }
-//             ASSIGNMENT | VARIABLE_NAME(_) => {
-//                 operators.push(token.clone());
-//             }
-//             _ if token.is_op() || token.is_var() => {
-//                 while let Some(top_op) = operators.last() {
-//                     if let OPEN_PAREN = top_op {
-//                         break;
-//                     }
-//                     if token.precedence() > top_op.precedence() {
-//                         break;
-//                     }
-//                     output.push(operators.pop().unwrap());
-//                 }
-//                 operators.push(token.clone());
-//             }
-//             _ => output.push(token.clone()),
-//         }
-//     }
-
-//     while let Some(op) = operators.pop() {
-//         output.push(op);
-//     }
-//     if output.is_empty() {
-//         return None;
-//     }
-
-//     Some(output)
-// }
-fn to_postfix<'a>(tokens :&mut Peekable<Iter<'a, PygoToken>>) -> Option<Vec<PygoToken>> {
+fn pre_parser<'a>(tokens :&mut Peekable<Iter<'a, PygoToken>>) -> Option<Vec<PygoToken>> {
     let mut output: Vec<PygoToken> = Vec::new();
     let mut operators: Vec<PygoToken> = Vec::new();
     let mut temp_variable: Option<PygoToken> = None;
@@ -175,10 +111,11 @@ fn main() {
 
 	
 	
-	print_tokens(&tokens);
+	//print_tokens(&tokens);
 	let mut tok = tokens.iter().peekable();
-	let mut new_token = to_postfix(&mut tok);
-	timer.end_us("post");
+	timer.end_us("before preparser");
+	let mut new_token = pre_parser(&mut tok);
+	timer.end_us("post preparser");
 	print_tokens(&new_token.unwrap());
 	//timer.end_us("Print Tokens");
 	// let mut parser = PygoParser::new(&tokens);
