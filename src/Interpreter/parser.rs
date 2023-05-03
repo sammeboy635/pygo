@@ -4,8 +4,6 @@ use crate::PygoTypes::pygo_token::{*,PygoToken::*};
 use crate::PygoTypes::pygo_instruction::Instruction;
 use crate::PygoTypes::pygo_context::Context;
 
-use crate::StandardLib::standard_library::StdLibFn;
-use crate::StandardLib::standard_library;
 
 use hashbrown::HashMap;
 use std::iter::Peekable;
@@ -25,7 +23,6 @@ impl <'a>PygoParser<'a> {
     }
 
 	pub fn parse(&mut self){
-		
 		while let Some(token) = self.tokens.next() {
 		//println!("{:?}", context.instruction);
 			let instruction = match token {
@@ -53,15 +50,6 @@ impl <'a>PygoParser<'a> {
 		
 	}
 	pub fn keyword(&mut self, keyword: &PygoToken)-> Option<Instruction>{
-		match keyword {
-			DEF => {
-				match self.check_next_token(vec![vec![FUNCTION_NAME("".to_string())], vec![OPEN_PAREN]]){
-					Ok(_) => println!("Its ok"),
-					Err(_) => println!("Error"),
-				}
-			},
-			_ => println!("{:?}",keyword),
-		}
 		return None;
 	}
 	pub fn operator(&self, operator: &PygoToken)-> Option<Instruction>{
@@ -102,20 +90,6 @@ impl <'a>PygoParser<'a> {
 			_ => Type::Void,
 		};
 		return Instruction::SetVar(var_name.to_owned(), _type);
-	}
-
-	pub fn check_next_token(&mut self, valid_tokens: Vec<Vec<PygoToken>>) -> Result<(), String> {
-		match self.tokens.peek() {
-			Some(next_token) => {
-				for token_group in valid_tokens.iter() {
-					if token_group.contains(next_token) {
-						return Ok(());
-					}
-				}
-				Err(format!("Unexpected token: {:?}", next_token))
-			}
-			None => Err("No more tokens in the iterator".to_string()),
-		}
 	}
 }
 
