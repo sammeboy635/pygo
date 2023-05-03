@@ -13,93 +13,58 @@ use std::slice::Iter;
 use std::mem;
 pub struct PygoParser<'a> {
     tokens: Peekable<Iter<'a, PygoToken>>,
-
+	context: Context,
 }
 
-impl<'a> PygoParser<'a> {
-    pub fn new(tokens: &'a Vec<PygoToken>) -> PygoParser<'a> {
+impl <'a>PygoParser<'a> {
+    pub fn new(tokens: &'a Vec<PygoToken>) -> PygoParser {
         PygoParser {
             tokens: tokens.iter().peekable(),
+			context: Context::new(),
         }
     }
 
-	pub fn parse(&mut self,context: &mut Context){
+	pub fn parse(&mut self){
+		
 		while let Some(token) = self.tokens.next() {
 		//println!("{:?}", context.instruction);
 			let instruction = match token {
 				ASSIGNMENT => None,
 				VARIABLE_NAME(var_name) => Some(Instruction::Load(var_name.to_owned(), Type::Unknown)),
-				VARIABLE_NAME_TYPE(var_name, var_type) => Some(self.variable_type(var_name, var_type)),
+				VARIABLE_NAME_TYPE(var_name, var_type) => Some(self.variable_type(&var_name, &var_type)),
 				VARIABLE_NAME_ASSIGNMENT(var_name) => Some(Instruction::SetVar(var_name.to_owned(), Type::Unknown)),
-				VARIABLE_NAME_ASSIGNMENT_TYPE(var_name, var_type) => Some(self.variable_type(var_name, var_type)),
+				VARIABLE_NAME_ASSIGNMENT_TYPE(var_name, var_type) => Some(self.variable_type(&var_name, &var_type)),
 				STRING_LITERAL(value) => Some(Instruction::Push(Type::String(value.to_owned()))),
 				INTEGER_LITERAL(value) => Some(Instruction::Push(Type::Int(*value as i64))),
 				FLOATING_POINT_LITERAL(value) => Some(Instruction::Push(Type::Float(value.0 as f64))),
 				BOOLEAN_LITERAL(value) => Some(Instruction::Push(Type::Bool(*value))),
 				NONE_LITERAL => None,
 				END => Some(Instruction::End),
-				_ if token.is_keyword() => None,
-				_ if token.is_op() => self.operator(&token, context),
+				_ if token.is_keyword() => self.keyword(&token),
+				_ if token.is_op() => self.operator(&token),
 				_ if token.is_literal() => None,
 				_ => {//println!("other: {:?}", token); 
 				None},
 			};
 			if let Some(cur_instruction) = instruction{
-				context.instruction.push(cur_instruction);
+				self.context.instruction.push(cur_instruction);
 			}
 		}
 		
 	}
-	fn to_postfix(&mut self) -> Option<Vec<PygoToken>> {
-		let mut output: Vec<PygoToken> = Vec::new();
-		let mut operators: Vec<PygoToken> = Vec::new();
-	
-		while let Some(token) = self.tokens.next() {
-			match token {
-				INTEGER_LITERAL(_) | FLOATING_POINT_LITERAL(_) | STRING_LITERAL(_) | BOOLEAN_LITERAL(_) => {
-					output.push(token.clone());
+	pub fn keyword(&mut self, keyword: &PygoToken)-> Option<Instruction>{
+		match keyword {
+			DEF => {
+				match self.check_next_token(vec![vec![FUNCTION_NAME("".to_string())], vec![OPEN_PAREN]]){
+					Ok(_) => println!("Its ok"),
+					Err(_) => println!("Error"),
 				}
-				OPEN_PAREN => {
-					operators.push(token.clone());
-				}
-				CLOSED_PAREN | COMMA => {
-					while let Some(top_op) = operators.pop() {
-						if let OPEN_PAREN = top_op {
-							break;
-						}
-						output.push(top_op);
-					}
-				}
-				END => {
-					break;
-				}
-				_ if token.is_op() || token.is_var() => {
-					while let Some(top_op) = operators.last() {
-						if let OPEN_PAREN = top_op {
-							break;
-						}
-						if token.precedence() > top_op.precedence() {
-							break;
-						}
-						output.push(operators.pop().unwrap());
-					}
-					operators.push(token.clone());
-				}
-				_ => output.push(token.clone()),
-			}
+			},
+			_ => println!("{:?}",keyword),
 		}
-	
-		while let Some(op) = operators.pop() {
-			output.push(op);
-		}
-		if output.is_empty(){
-			return None;
-		}
-
-		Some(output)
+		return None;
 	}
-
-	pub fn operator(&self, operator: &PygoToken, context: &mut Context)-> Option<Instruction>{
+	pub fn operator(&self, operator: &PygoToken)-> Option<Instruction>{
 		//println!("op: {:?}", operator);
 		match operator {
 			PygoToken::ADDITION => Some(Instruction::Add),
@@ -111,7 +76,8 @@ impl<'a> PygoParser<'a> {
 			_ => None,	
 		}
 	}
-	pub fn literal(&self, literal: &PygoToken, context: &mut Context){
+
+	pub fn literal(&self, literal: &PygoToken){
 		//println!("lit: {:?}", literal);
 		match literal {
 			PygoToken::INTEGER_LITERAL(val) => (),
@@ -120,10 +86,12 @@ impl<'a> PygoParser<'a> {
 			
 		}
 	}
+
 	pub fn variable(&self, var_name: &String)-> Instruction {
 		//println!("var_name: {:?}", var_name);
 		return Instruction::SetVar(var_name.to_owned(), Type::Unknown);
 	}
+
 	pub fn variable_type(&self, var_name: &String, var_type: &String) -> Instruction{
 		//println!("var_name{:?}, type {:?}",var_name,var_type);
 		let _type = match var_type.as_str() { // Change this to be not hard codded maybe change type to have option
@@ -134,6 +102,20 @@ impl<'a> PygoParser<'a> {
 			_ => Type::Void,
 		};
 		return Instruction::SetVar(var_name.to_owned(), _type);
+	}
+
+	pub fn check_next_token(&mut self, valid_tokens: Vec<Vec<PygoToken>>) -> Result<(), String> {
+		match self.tokens.peek() {
+			Some(next_token) => {
+				for token_group in valid_tokens.iter() {
+					if token_group.contains(next_token) {
+						return Ok(());
+					}
+				}
+				Err(format!("Unexpected token: {:?}", next_token))
+			}
+			None => Err("No more tokens in the iterator".to_string()),
+		}
 	}
 }
 

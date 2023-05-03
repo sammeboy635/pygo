@@ -1,7 +1,7 @@
 
 use hashbrown::HashMap;
 use std::hash::{Hash, Hasher};
-
+use super::pygo_instruction::Instruction;
 
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub struct Float32(pub f32);
@@ -293,16 +293,29 @@ impl PygoToken{
 	pub fn is_literal(&self) -> bool{
 		match self {
 			PygoToken::BOOLEAN_LITERAL(..) => true,
-			PygoToken::BOOLEAN_LITERAL(..) => true,
 			PygoToken::NONE_LITERAL => true,
 			_ => false,
 		}
 	}
 	pub fn is_var(&self) -> bool{
 		match self {
+			PygoToken::VARIABLE_NAME(..) => true,
+			PygoToken::VARIABLE_NAME_TYPE(..) => true,
 			PygoToken::VARIABLE_NAME_ASSIGNMENT(..) => true,
 			PygoToken::VARIABLE_NAME_ASSIGNMENT_TYPE(..) => true,
 			_ => false,
 		}
 	}
+	pub fn is_delimiters(&self)-> bool{
+		match self {
+			PygoToken::COMMA => true,
+			PygoToken::OPEN_PAREN => true,
+			//PygoToken::{[Brackets]}
+			PygoToken::COLON => true,
+			_ => false,
+		}
+	}
+	//Comments
 }
+
+

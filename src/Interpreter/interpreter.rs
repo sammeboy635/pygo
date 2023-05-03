@@ -33,15 +33,21 @@ impl Interpret{
 		while let Some(instruction) = code.next(){
 			match instruction {
 				Add | Sub | Mul | Div | Exp | Modulo => self.operations(&instruction),
-				Load(_name, _type) => self.stack.push(context.variables.get(_name).unwrap().clone()),
+				Load(_name, _) => self.load(context, _name),
 				Push(val) => self.stack.push(val.clone()),
 				SetVar(_name, _) => {context.variables.insert(_name.clone(), self.stack.pop().unwrap());},
 				End => continue,
-				_ => todo!(),
+				_ => println!("need implementation {:?}", instruction),
 			}
 		}
 		if self.stack.len() == 0 {return Type::Void;}
 		return self.stack.pop().unwrap();
+	}
+	pub fn load(&mut self, context: &Context , _name : &String){
+		match context.variables.get(_name){
+			Some(val) => self.stack.push(val.clone()),
+			None => (),
+		}
 	}
 	pub fn operations(&mut self, instruction : &Instruction){
 		let right = self.stack.pop().unwrap();

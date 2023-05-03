@@ -3,16 +3,21 @@
 
 mod test;
 mod Interpreter;
-use crate::Interpreter::lexer::{Tokenizer, load_file, print_tokens};
+use crate::Interpreter::lexer::{Tokenizer, load_file};
 use crate::Interpreter::parser::PygoParser;
 use crate::Interpreter::interpreter::{Interpret, self};
 
 mod PygoTypes;
 use crate::PygoTypes::pygo_type::Type;
 use crate::PygoTypes::pygo_context::Context;
+use crate::PygoTypes::pygo_context::FunctionDefinition;
+use crate::PygoTypes::pygo_token::{*,PygoToken::*};
 
 mod StandardLib;
 use crate::StandardLib::standard_library::standard_library;
+
+mod Traits;
+use crate::Traits::pygo_token::{PygoTokenVec};
 
 mod Utils;
 use crate::Utils::timer::Timer;
@@ -20,6 +25,7 @@ use crate::Utils::timer::Timer;
 
 use std::time::{Instant};
 use std::collections::HashMap;
+use std::vec;
 use PygoTypes::pygo_instruction::Instruction;
 use evalexpr::*;
 use nom::Parser;
@@ -27,9 +33,9 @@ use std::cell::RefCell;
 
 use std::collections::VecDeque;
 
+
 use std::iter::Peekable;
 use std::slice::Iter;
-use crate::PygoTypes::pygo_token::{*,PygoToken::*};
 
 fn pre_parser<'a>(tokens :&mut Peekable<Iter<'a, PygoToken>>) -> Option<Vec<PygoToken>> {
     let mut output: Vec<PygoToken> = Vec::new();
@@ -94,34 +100,124 @@ fn pre_parser<'a>(tokens :&mut Peekable<Iter<'a, PygoToken>>) -> Option<Vec<Pygo
     Some(output)
 }
 
+fn extract_function_definitions(tokens: &mut Vec<PygoToken>, context: &mut Context) {
+    let mut tokens_iter = tokens.iter().peekable();
+
+    let mut to_remove: Vec<usize> = Vec::new();
+    let mut index = 0;
+
+    while let Some(token) = tokens_iter.next() {
+        if let PygoToken::DEF = token {
+            if let Some(PygoToken::FUNCTION_NAME(name)) = tokens_iter.next() {
+                let mut args = Vec::new();
+                let mut instructions = Vec::new();
+                let mut returns = None;
+
+                to_remove.push(index - 1);
+                to_remove.push(index);
+
+                if let Some(PygoToken::OPEN_PAREN) = tokens_iter.next() {
+                    to_remove.push(index + 1);
+                    while let Some(token) = tokens_iter.peek() {
+                        match token {
+                            PygoToken::VARIABLE_NAME(arg_name) => {
+                                args.push(arg_name.clone());
+                                tokens_iter.next();
+                                to_remove.push(index + 2);
+                            }
+                            PygoToken::COMMA => {
+                                tokens_iter.next();
+                                to_remove.push(index + 2);
+                            }
+                            PygoToken::CLOSED_PAREN => {
+                                tokens_iter.next();
+                                to_remove.push(index + 2);
+                                break;
+                            }
+                            _ => panic!("Unexpected token in function arguments"),
+                        }
+                        index += 1;
+                    }
+                }
+
+                if let Some(PygoToken::COLON) = tokens_iter.next() {
+                    to_remove.push(index + 1);
+                    while let Some(token) = tokens_iter.peek() {
+                        index += 1;
+                        match token {
+                            PygoToken::RETURN => {
+								while let Some(tok) = tokens_iter.next(){
+
+								}
+                                tokens_iter.next(); // Consume RETURN token
+                                to_remove.push(index);
+                                returns = Some(Type::Void); // Default return type is Void
+                                break;
+                            }
+                            _ => {
+                                // Extract instructions
+                                // if let Some(instr) = Instruction::from_pygo_token(token) {
+                                //     instructions.push(instr);
+                                // }
+                                tokens_iter.next();
+                                to_remove.push(index);
+                            }
+                        }
+                    }
+                }
+
+                let function_definition = FunctionDefinition {
+                    name: name.clone(),
+                    args,
+                    instructions,
+                    returns,
+                };
+
+                context.add_function_definition(function_definition);
+            }
+        }
+        index += 1;
+    }
+
+    // Remove parsed tokens
+    to_remove.reverse();
+    for idx in to_remove {
+        tokens.remove(idx);
+    }
+}
+
+
+
 /* In the main function, we are opening a file, reading its contents,
    initializing a hashmap for context variables, and passing the contents and 
    hashmap to the evaluate function for further processing. */
 fn main() {
 	let mut context = Context::new();
 	let data = RefCell::new(context);
-
+	let mut tokens: Vec<PygoToken> = vec![];
+	
+	//let &mut tokens: Vec<PygoToken> = vec![]._load_file("tmp/assignment/test_2.py");
 	//test::main2();
-	let binding = load_file("tmp/assignment/test_2.py");
-    let code = binding.as_str();
-
 	let mut timer = Timer::new();
-    let mut tokenizer = Tokenizer::new(code);
-    let tokens = tokenizer.tokenize();
+	tokens._load_file("tmp/assignment/test_2.py");
 	timer.elapse("Tokenizer");
 
-	
-	
-	//print_tokens(&tokens);
-	let mut tok = tokens.iter().peekable();
-	let mut new_token = pre_parser(&mut tok).unwrap();
+	let mut pre_tokens = tokens.pre_parser().unwrap();
 	timer.elapse("Preparser");
-	print_tokens(&tokens);
-	print_tokens(&new_token);
+	
+	// Printing tokenizer and preparser
+	tokens._debug_print();
+	pre_tokens._debug_print();
+
+
+	//Function definitions
+	//extract_function_definitions(&mut pre_tokens,&mut data.borrow_mut());
+	//println!("{:?}", data.borrow().functions);
+
 
 	timer.new_start();
-	let mut parser = PygoParser::new(&new_token);
-	parser.parse(&mut data.borrow_mut());
+	let mut parser = PygoParser::new(&mut pre_tokens);
+	parser.parse();
 	timer.elapse("Parser");
 
 	println!("\n{:?}\n", data.borrow().instruction);

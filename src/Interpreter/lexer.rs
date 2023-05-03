@@ -18,8 +18,8 @@ impl<'a> Tokenizer<'a> {
 			indentation_level : 0,
         }
     }
-	pub fn tokenize(&mut self) -> Vec<PygoToken> {
-        let mut tokens = Vec::new();
+	pub fn tokenize(&mut self,  tokens : &mut Vec<PygoToken>) {
+        //let mut tokens = Vec::new();
 
         while let Some(&c) = self.input.peek() {
 			// println!("{:?}",tokens);
@@ -69,8 +69,6 @@ impl<'a> Tokenizer<'a> {
                 }
             }
         }
-
-        tokens
     }
 	fn parse_identifier_or_keyword(&mut self, last_token : Option<&PygoToken>) -> Option<PygoToken> {
         let mut identifier = String::new();
@@ -290,45 +288,20 @@ use std::io::prelude::*;
 
 pub fn load_file(file_name: &str) -> String{
 	let mut file = File::open(file_name).expect("Failed to open file");
-    let mut contents = String::new();
-    file.read_to_string(&mut contents).expect("Failed to read file");
-	return contents;
+    let mut content = String::new();
+    file.read_to_string(&mut content).expect("Failed to read file");
+    return content;
 }
-
-pub fn print_tokens(tokens: &Vec<PygoToken>) {
-    let mut output_buffer = String::new();
-    output_buffer.push_str("\n");
-    for token in tokens {
-        if let PygoToken::TAB(val) = token {
-            for _ in 0..*val {
-                output_buffer.push('\t');
-            }
-        } else {
-            output_buffer.push_str(&format!("{:?} ", token));
-        }
-        if let PygoToken::END = token {
-            output_buffer.push('\n');
-        }
-    }
-    output_buffer.push_str("\n");
-    print!("{}", output_buffer);
-}
-
-impl PygoToken {
-	
-}
-
 
 
 use crate::Utils::timer::Timer;
 
 #[test]
 pub fn main2() {
-	let binding = load_file("tmp/main.py");
-    let code = binding.as_str();
+	let code = load_file("tmp/main.py");
 	
-    let mut tokenizer = Tokenizer::new(code);
+    let mut tokenizer = Tokenizer::new(code.as_str());
 	let mut timer = Timer::new();
-    let tokens = tokenizer.tokenize();
-	print_tokens(&tokens);
+    //
+	//print_tokens(&tokens);
 }

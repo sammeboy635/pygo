@@ -16,10 +16,12 @@ pub struct Variable {
     pub var_type: VariableType,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct Function {
+#[derive(Debug, Clone)]
+pub struct FunctionDefinition {
     pub name: String,
-    // Add any additional information about the function, such as its parameters and return type
+    pub args: Vec<String>,
+    pub instructions: Vec<Instruction>,
+    pub returns: Option<Type>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -32,7 +34,7 @@ pub struct Context {
     imports: HashSet<String>,
     classes: HashMap<String, Class>,
     pub variables: HashMap<String, Type>,
-    functions: HashMap<String, Function>,
+    pub functions: HashMap<String, FunctionDefinition>,
 	pub instruction: Vec<Instruction>,
 }
 
@@ -59,10 +61,10 @@ impl Context {
         self.variables.insert(variable, val);
     }
 
-    pub fn add_function(&mut self, function: Function) {
-        self.functions.insert(function.name.clone(), function);
+	pub fn add_function_definition(&mut self, function_definition: FunctionDefinition) {
+        self.functions
+            .insert(function_definition.name.clone(), function_definition);
     }
-
     pub fn find_import(&self, name: &str) -> Option<&String> {
         self.imports.get(name)
     }
@@ -75,7 +77,4 @@ impl Context {
         self.variables.get(name)
     }
 
-    pub fn find_function(&self, name: &str) -> Option<&Function> {
-        self.functions.get(name)
-    }
 }
