@@ -126,7 +126,7 @@ fn main() {
 
 	timer.new_start();
 	let mut parser = PygoParser::new(&mut pre_tokens);
-	parser.parse();
+	parser.parse(&mut data.borrow_mut());
 	timer.elapse("Parser");
 
 	println!("\nInstructions: \n{:?}\n", data.borrow().instruction);

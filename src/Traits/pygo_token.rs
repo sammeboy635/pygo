@@ -54,7 +54,8 @@ impl PygoTokenVec for Vec<PygoToken> {
 					output.push(token.clone());
 					func_paren_count += 1;
 				}
-				PygoToken::INTEGER_LITERAL(_) | PygoToken::FLOATING_POINT_LITERAL(_) | PygoToken::STRING_LITERAL(_) | PygoToken::BOOLEAN_LITERAL(_) => {
+				PygoToken::INTEGER_LITERAL(_) | PygoToken::FLOATING_POINT_LITERAL(_) | PygoToken::STRING_LITERAL(_) | PygoToken::BOOLEAN_LITERAL(_) |
+				 PygoToken::VARIABLE_NAME(_) => {
 					output.push(token.clone());
 				}
 				PygoToken::OPEN_PAREN => {

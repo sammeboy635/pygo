@@ -5,6 +5,7 @@ use crate::PygoTypes::pygo_instruction::Instruction;
 use crate::PygoTypes::pygo_context::Context;
 
 
+use evalexpr::context_map;
 use hashbrown::HashMap;
 use std::iter::Peekable;
 use std::process::Command;
@@ -12,18 +13,18 @@ use std::slice::Iter;
 use std::{mem, vec};
 pub struct PygoParser<'a> {
     tokens: Peekable<Iter<'a, PygoToken>>,
-	context: Context,
+	//context: Context,
 }
 
 impl <'a>PygoParser<'a> {
     pub fn new(tokens: &'a Vec<PygoToken>) -> PygoParser {
         PygoParser {
             tokens: tokens.iter().peekable(),
-			context: Context::new(),
+			//context: Context::new(),
         }
     }
 
-	pub fn parse(&mut self){
+	pub fn parse(&mut self,  context: &mut Context){
 		while let Some(token) = self.tokens.next() {
 		//println!("{:?}", context.instruction);
 			let instruction = match token {
@@ -45,7 +46,7 @@ impl <'a>PygoParser<'a> {
 				None},
 			};
 			if let Some(cur_instruction) = instruction{
-				self.context.instruction.push(cur_instruction);
+				context.instruction.push(cur_instruction);
 			}
 		}
 		
