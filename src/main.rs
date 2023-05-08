@@ -100,97 +100,6 @@ fn pre_parser<'a>(tokens :&mut Peekable<Iter<'a, PygoToken>>) -> Option<Vec<Pygo
     Some(output)
 }
 
-fn extract_function_definitions(tokens: &mut Vec<PygoToken>, context: &mut Context) {
-    let mut tokens_iter = tokens.iter().peekable();
-
-    let mut to_remove: Vec<usize> = Vec::new();
-    let mut index = 0;
-
-    while let Some(token) = tokens_iter.next() {
-        if let PygoToken::DEF = token {
-            if let Some(PygoToken::FUNCTION_NAME(name)) = tokens_iter.next() {
-                let mut args = Vec::new();
-                let mut instructions = Vec::new();
-                let mut returns = None;
-
-                to_remove.push(index - 1);
-                to_remove.push(index);
-
-                if let Some(PygoToken::OPEN_PAREN) = tokens_iter.next() {
-                    to_remove.push(index + 1);
-                    while let Some(token) = tokens_iter.peek() {
-                        match token {
-                            PygoToken::VARIABLE_NAME(arg_name) => {
-                                args.push(arg_name.clone());
-                                tokens_iter.next();
-                                to_remove.push(index + 2);
-                            }
-                            PygoToken::COMMA => {
-                                tokens_iter.next();
-                                to_remove.push(index + 2);
-                            }
-                            PygoToken::CLOSED_PAREN => {
-                                tokens_iter.next();
-                                to_remove.push(index + 2);
-                                break;
-                            }
-                            _ => panic!("Unexpected token in function arguments"),
-                        }
-                        index += 1;
-                    }
-                }
-
-                if let Some(PygoToken::COLON) = tokens_iter.next() {
-                    to_remove.push(index + 1);
-                    while let Some(token) = tokens_iter.peek() {
-                        index += 1;
-                        match token {
-                            PygoToken::RETURN => {
-								while let Some(tok) = tokens_iter.next(){
-
-								}
-                                tokens_iter.next(); // Consume RETURN token
-                                to_remove.push(index);
-                                returns = Some(Type::Void); // Default return type is Void
-                                break;
-                            }
-                            _ => {
-                                // Extract instructions
-                                // if let Some(instr) = Instruction::from_pygo_token(token) {
-                                //     instructions.push(instr);
-                                // }
-                                tokens_iter.next();
-                                to_remove.push(index);
-                            }
-                        }
-                    }
-                }
-
-                let function_definition = FunctionDefinition {
-                    name: name.clone(),
-                    args,
-                    instructions,
-                    returns,
-                };
-
-                context.add_function_definition(function_definition);
-            }
-        }
-        index += 1;
-    }
-
-    // Remove parsed tokens
-    to_remove.reverse();
-    for idx in to_remove {
-        tokens.remove(idx);
-    }
-}
-
-
-
-/* In the main function, we are opening a file, reading its contents,
-   initializing a hashmap for context variables, and passing the contents and 
-   hashmap to the evaluate function for further processing. */
 fn main() {
 	let mut context = Context::new();
 	let data = RefCell::new(context);
@@ -199,7 +108,7 @@ fn main() {
 	//let &mut tokens: Vec<PygoToken> = vec![]._load_file("tmp/assignment/test_2.py");
 	//test::main2();
 	let mut timer = Timer::new();
-	tokens._load_file("tmp/assignment/test_2.py");
+	tokens._load_file("tmp/assignment/test_1.py");
 	timer.elapse("Tokenizer");
 
 	let mut pre_tokens = tokens.pre_parser().unwrap();
@@ -220,7 +129,7 @@ fn main() {
 	parser.parse();
 	timer.elapse("Parser");
 
-	println!("\n{:?}\n", data.borrow().instruction);
+	println!("\nInstructions: \n{:?}\n", data.borrow().instruction);
 
 
 	timer.new_start();

@@ -7,8 +7,9 @@ use crate::PygoTypes::pygo_context::Context;
 
 use hashbrown::HashMap;
 use std::iter::Peekable;
+use std::process::Command;
 use std::slice::Iter;
-use std::mem;
+use std::{mem, vec};
 pub struct PygoParser<'a> {
     tokens: Peekable<Iter<'a, PygoToken>>,
 	context: Context,
@@ -50,6 +51,20 @@ impl <'a>PygoParser<'a> {
 		
 	}
 	pub fn keyword(&mut self, keyword: &PygoToken)-> Option<Instruction>{
+		if *keyword == DEF {
+			let func_name = self.tokens.next().expect("No Function Token");
+			self.tokens.next_if(|&x| x == &OPEN_PAREN).expect("error");
+			let mut index = 0;
+			let mut args: Vec<Vec<PygoToken>> = vec![vec![]];
+			while let Some(val) = self.tokens.next(){
+				match val {
+					COMMA => {args.push(vec![]);index += 1},
+					CLOSED_PAREN => break,
+					_ => args[index].push(val.clone()),
+				}
+			}
+			println!("{:?}", args);
+		}
 		return None;
 	}
 	pub fn operator(&self, operator: &PygoToken)-> Option<Instruction>{
@@ -75,11 +90,6 @@ impl <'a>PygoParser<'a> {
 		}
 	}
 
-	pub fn variable(&self, var_name: &String)-> Instruction {
-		//println!("var_name: {:?}", var_name);
-		return Instruction::SetVar(var_name.to_owned(), Type::Unknown);
-	}
-
 	pub fn variable_type(&self, var_name: &String, var_type: &String) -> Instruction{
 		//println!("var_name{:?}, type {:?}",var_name,var_type);
 		let _type = match var_type.as_str() { // Change this to be not hard codded maybe change type to have option
@@ -91,5 +101,6 @@ impl <'a>PygoParser<'a> {
 		};
 		return Instruction::SetVar(var_name.to_owned(), _type);
 	}
+
 }
 
