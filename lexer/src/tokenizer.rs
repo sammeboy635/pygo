@@ -1,10 +1,25 @@
-use std::fmt::Error;
+#![allow(warnings)]
+#![allow(unused_imports)]
 use std::str::Chars;
 use std::iter::Peekable;
-use hashbrown::HashMap;
-use std::hash::{Hash, Hasher};
+use ast::token::{PygoToken};
+use ast::types::{Type, Float};
+use utils::timer::*;
+use crate::*;
 
-use crate::PygoTypes::pygo_token::{*, PygoToken::*};
+
+pub fn main() {
+	let content = tokenizer::load_file("tmp\\assignment\\test_1.py");
+	let mut tok = tokenizer::Tokenizer::new(content.as_str());
+	let mut tokens = vec![];
+	let mut timer = Timer::new();
+	timer.elapse("add");
+	tok.tokenize(&mut tokens);
+	timer.elapse("token");
+	println!("{:?}", tokens);
+	timer.print();
+
+}
 
 pub struct Tokenizer<'a> {
     input: Peekable<Chars<'a>>,
@@ -18,13 +33,9 @@ impl<'a> Tokenizer<'a> {
 			indentation_level : 0,
         }
     }
-	pub fn tokenize(&mut self,  tokens : &mut Vec<PygoToken>) {
-        //let mut tokens = Vec::new();
+	pub fn tokenize(&mut self, tokens : &mut Vec<PygoToken>) {
 
         while let Some(&c) = self.input.peek() {
-			// println!("{:?}",tokens);
-			// println!("{:?}",c);
-
             match c {
 				'?' => {
 					self.input.next();
@@ -49,6 +60,14 @@ impl<'a> Tokenizer<'a> {
 				')' => {
 					self.input.next();
 					tokens.push(PygoToken::CLOSED_PAREN);
+				},
+				'[' => {
+					self.input.next();
+					tokens.push(PygoToken::OPEN_BRACKET);
+				},
+				']' => {
+					self.input.next();
+					tokens.push(PygoToken::CLOSED_BRACKET);
 				},
 				',' => {
 					self.input.next();
@@ -84,9 +103,9 @@ impl<'a> Tokenizer<'a> {
 
         if identifier.is_empty() {
             None
-        } else if let Some(keyword_token) = PygoToken::_is_keyword(&identifier[..]) {
+        } else if let Some(keyword_token) = is_keyword!(&identifier[..]) {
             Some(keyword_token)
-		} else if let Some(literal_token) = PygoToken::_is_literal(&identifier[..]){
+		} else if let Some(literal_token) = is_literal!(&identifier[..]){
 			Some(literal_token)
         } else {
 			// In a complete tokenizer, you should differentiate between
@@ -151,7 +170,7 @@ impl<'a> Tokenizer<'a> {
 
         while let Some(&c) = self.input.peek() {
             possible_operator.push(c);
-            if let Some(token) = PygoToken::_is_op(&possible_operator[..]) {
+            if let Some(token) = is_op!(&possible_operator[..]) {
                 current_operator = possible_operator.clone();
                 current_token = Some(token.clone());
                 self.input.next();
@@ -209,11 +228,11 @@ impl<'a> Tokenizer<'a> {
         }
 
         if let Ok(val) = number_literal.parse::<f32>() {
-            Some(PygoToken::FLOATING_POINT_LITERAL(Float32(val)))
-        } else if let Ok(val) = number_literal.parse::<i32>(){
-            Some(PygoToken::INTEGER_LITERAL(val))
+            Some(PygoToken::LITERAL(Type::Float(Float(val))))
+        } else if let Ok(val) = number_literal.parse::<i64>(){
+            Some(PygoToken::LITERAL(Type::Int(val)))
         }else{
-			Some(PygoToken::NONE_LITERAL)
+			Some(PygoToken::LITERAL(Type::None))
 		}
     }
 	fn parse_variable_type(&mut self) -> Option<String> {
@@ -285,7 +304,6 @@ impl<'a> Tokenizer<'a> {
 
 use std::fs::File;
 use std::io::prelude::*;
-
 pub fn load_file(file_name: &str) -> String{
 	let mut file = File::open(file_name).expect("Failed to open file");
     let mut content = String::new();
@@ -294,14 +312,3 @@ pub fn load_file(file_name: &str) -> String{
 }
 
 
-use crate::Utils::timer::Timer;
-
-#[test]
-pub fn main2() {
-	let code = load_file("tmp/main.py");
-	
-    let mut tokenizer = Tokenizer::new(code.as_str());
-	let mut timer = Timer::new();
-    //
-	//print_tokens(&tokens);
-}

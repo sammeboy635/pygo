@@ -1,7 +1,7 @@
-use crate::PygoTypes::pygo_context::Context;
-use crate::PygoTypes::pygo_type::Type;
-use crate::PygoTypes::pygo_function::Function;
-use crate::PygoTypes::pygo_instruction::{Instruction, Instruction::*};
+use ast::context::Context;
+use ast::types::{Type, Function};
+
+use ast::instruction::{Instruction, Instruction::*};
 
 
 use std::collections::HashMap;
@@ -66,26 +66,3 @@ impl Interpret{
 }
 
 
-
-
-
-// #[test]
-// fn test_int(){
-// 	use crate::standard_library;
-// 	fn execute_instruction(instruction: &Instruction) {
-// 		match instruction {
-// 			Instruction::Call(_, args, func) => {
-// 				func.call(args.clone());
-// 			}
-// 			_ => println!("Unhandled instruction"),
-// 		}
-// 	}
-// 	let print = Instruction::Call(
-//         "print".to_string(),
-// 		Type::String("Hello_world".to_string()),
-// 		MyFunc::new(standard_library::print),
-//     );
-// 	// Call the print instruction
-// 	execute_instruction(&print);
-	
-// }

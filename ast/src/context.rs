@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
-use crate::PygoTypes::pygo_instruction::Instruction;
+use crate::instruction::Instruction;
 
-use super::pygo_type::Type;
+use crate::types::Type;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum VariableType {

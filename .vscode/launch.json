@@ -7,20 +7,134 @@
 		{
 			"type": "lldb",
 			"request": "launch",
-			"name": "Launch",
-			"program": "${workspaceFolder}/target/debug/pygo.exe",
+			"name": "Debug unit tests in library 'ast'",
+			"cargo": {
+				"args": [
+					"test",
+					"--no-run",
+					"--lib",
+					"--package=ast"
+				],
+				"filter": {
+					"name": "ast",
+					"kind": "lib"
+				}
+			},
 			"args": [],
 			"cwd": "${workspaceFolder}"
 		},
 		{
 			"type": "lldb",
 			"request": "launch",
-			"name": "Cargo launch",
+			"name": "Debug unit tests in library 'lexer'",
 			"cargo": {
 				"args": [
-					"run",
-				]
+					"test",
+					"--no-run",
+					"--lib",
+					"--package=lexer"
+				],
+				"filter": {
+					"name": "lexer",
+					"kind": "lib"
+				}
 			},
-		},	
+			"args": [],
+			"cwd": "${workspaceFolder}"
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug unit tests in library 'parser'",
+			"cargo": {
+				"args": [
+					"test",
+					"--no-run",
+					"--lib",
+					"--package=parser"
+				],
+				"filter": {
+					"name": "parser",
+					"kind": "lib"
+				}
+			},
+			"args": [],
+			"cwd": "${workspaceFolder}"
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug unit tests in library 'interpreter'",
+			"cargo": {
+				"args": [
+					"test",
+					"--no-run",
+					"--lib",
+					"--package=interpreter"
+				],
+				"filter": {
+					"name": "interpreter",
+					"kind": "lib"
+				}
+			},
+			"args": [],
+			"cwd": "${workspaceFolder}"
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug executable 'master'",
+			"cargo": {
+				"args": [
+					"build",
+					"--bin=master",
+					"--package=master"
+				],
+				"filter": {
+					"name": "master",
+					"kind": "bin"
+				}
+			},
+			"args": [],
+			"cwd": "${workspaceFolder}"
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug unit tests in executable 'master'",
+			"cargo": {
+				"args": [
+					"test",
+					"--no-run",
+					"--bin=master",
+					"--package=master"
+				],
+				"filter": {
+					"name": "master",
+					"kind": "bin"
+				}
+			},
+			"args": [],
+			"cwd": "${workspaceFolder}"
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug unit tests in library 'utils'",
+			"cargo": {
+				"args": [
+					"test",
+					"--no-run",
+					"--lib",
+					"--package=utils"
+				],
+				"filter": {
+					"name": "utils",
+					"kind": "lib"
+				}
+			},
+			"args": [],
+			"cwd": "${workspaceFolder}"
+		}
 	]
 }

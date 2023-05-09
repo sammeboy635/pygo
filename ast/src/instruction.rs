@@ -1,5 +1,4 @@
-use crate::PygoTypes::pygo_type::Type;
-use crate::PygoTypes::pygo_function::Function;
+use super::types::{Type,Function};
 
 #[derive(Clone)]
 pub enum Instruction {

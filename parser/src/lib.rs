@@ -1,16 +1,14 @@
-use crate::PygoTypes::pygo_function::Function;
-use crate::PygoTypes::pygo_type::Type;
-use crate::PygoTypes::pygo_token::{*,PygoToken::*};
-use crate::PygoTypes::pygo_instruction::Instruction;
-use crate::PygoTypes::pygo_context::Context;
+use ast::context::Context;
+use ast::types::{Type,Float};
+use ast::token::{PygoToken, PygoToken::*};
+
+use ast::instruction::{Instruction};
 
 
-use evalexpr::context_map;
-use hashbrown::HashMap;
+
 use std::iter::Peekable;
-use std::process::Command;
 use std::slice::Iter;
-use std::{mem, vec};
+use std::{vec};
 pub struct PygoParser<'a> {
     tokens: Peekable<Iter<'a, PygoToken>>,
 	//context: Context,
@@ -33,11 +31,7 @@ impl <'a>PygoParser<'a> {
 				VARIABLE_NAME_TYPE(var_name, var_type) => Some(self.variable_type(&var_name, &var_type)),
 				VARIABLE_NAME_ASSIGNMENT(var_name) => Some(Instruction::SetVar(var_name.to_owned(), Type::Unknown)),
 				VARIABLE_NAME_ASSIGNMENT_TYPE(var_name, var_type) => Some(self.variable_type(&var_name, &var_type)),
-				STRING_LITERAL(value) => Some(Instruction::Push(Type::String(value.to_owned()))),
-				INTEGER_LITERAL(value) => Some(Instruction::Push(Type::Int(*value as i64))),
-				FLOATING_POINT_LITERAL(value) => Some(Instruction::Push(Type::Float(value.0 as f64))),
-				BOOLEAN_LITERAL(value) => Some(Instruction::Push(Type::Bool(*value))),
-				NONE_LITERAL => None,
+				LITERAL(val) => Some(Instruction::Push(val.clone())),
 				END => Some(Instruction::End),
 				_ if token.is_keyword() => self.keyword(&token),
 				_ if token.is_op() => self.operator(&token),
@@ -95,9 +89,9 @@ impl <'a>PygoParser<'a> {
 		//println!("var_name{:?}, type {:?}",var_name,var_type);
 		let _type = match var_type.as_str() { // Change this to be not hard codded maybe change type to have option
 			"int" => Type::Int(0),
-			"float" => Type::Float(0.0),
+			"float" => Type::Float(Float(0.0)),
 			"string" => Type::String("".to_string()),
-			"double" => Type::Double(0.0),
+			"double" => Type::Double(Float(0.0)),
 			_ => Type::Void,
 		};
 		return Instruction::SetVar(var_name.to_owned(), _type);
